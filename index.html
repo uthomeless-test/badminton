@@ -789,7 +789,17 @@ textarea{resize:vertical;}
 
 
 
+
+
+
+
+
 <script>
+
+
+
+
+
 
 
 
@@ -875,13 +885,27 @@ def('trainLogs',{});
 
 }
 
-const TODAY=new Date();TODAY.setHours(0,0,0,0);
-const GOAL=new Date('2026-09-22');
-const TDS=TODAY.toISOString().split('T')[0];
+// 日本標準時(JST, UTC+9)で「今日」を確定する。端末のTZに依存しない
+const TODAY=(()=>{
+  const now=new Date();
+  // UTCミリ秒 + 9時間 で JST の瞬間を得る
+  const jst=new Date(now.getTime()+(now.getTimezoneOffset()+540)*60000);
+  jst.setHours(0,0,0,0);
+  return jst;
+})();
+const GOAL=new Date('2026-09-22T00:00:00');
+const TDS=ymd(TODAY);
 const HT=1.63;
 const $=id=>document.getElementById(id);
 function safeText(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
 function safeHTML(id,v){const el=document.getElementById(id);if(el)el.innerHTML=v;}
+// ローカルタイム（日本時間）で YYYY-MM-DD を返す。toISOString()はUTCでズレるため使わない
+function ymd(d){
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const dd=String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+dd;
+}
 function daysLeft(){return Math.ceil((GOAL-TODAY)/86400000);}
 function curW(){return (S.wLog&&S.wLog.length)?S.wLog[S.wLog.length-1].w:94;}
 function progPct(){try{return Math.min(100,Math.round(Math.max(0,94-curW())/16*100));}catch{return 0;}}
@@ -898,8 +922,8 @@ function closeSidebar(){$('sidebar').classList.remove('open');$('sb-overlay').cl
 // ══════════════════════════════
 //  NAV
 // ══════════════════════════════
-const NAVMAP={dashboard:0,calendar:1,weight:2,sleep:3,water:4,food:5,motive:6,training:7,footwork:8,checklist:9,review:10,tactics:11,memo:12,day:13};
-const BN_IDS=['dashboard','calendar','footwork','training','checklist'];
+const NAVMAP={dashboard:0,calendar:1,weight:3,sleep:4,water:5,food:6,motive:7,training:8,footwork:9,checklist:10,review:11,tactics:12,memo:13,day:-1};
+const BN_IDS=['dashboard','calendar','day','training','checklist'];
 function nav(id){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(n=>n.classList.remove('active'));
@@ -932,7 +956,7 @@ function navDay(ds){
 function dayShift(d){
   const dt = new Date(currentDayDate);
   dt.setDate(dt.getDate() + d);
-  navDay(dt.toISOString().split('T')[0]);
+  navDay(ymd(dt));
 }
 
 function renderDay(ds){
@@ -1207,7 +1231,7 @@ function renderDashboard(){
   const done=Object.keys(S.checks).filter(k=>S.checks[k]&&k.startsWith('c')).length;
   $('kpi-cl').textContent=Math.round(done/total*100)+'%';$('kpi-cl-sub').textContent=done+'/'+total;
   let str=0;const c2=new Date(TODAY);
-  while(true){const s=c2.toISOString().split('T')[0];if(S.calDays[s]&&S.calDays[s].trained){str++;c2.setDate(c2.getDate()-1);}else break;}
+  while(true){const s=ymd(c2);if(S.calDays[s]&&S.calDays[s].trained){str++;c2.setDate(c2.getDate()-1);}else break;}
   $('kpi-str').textContent=str;
   const pi=curPhaseIdx();
   $('dash-tl').innerHTML=PHASES.map((p,i)=>{
@@ -1229,7 +1253,7 @@ function renderDashboard(){
   $('d-pb').style.width=progPct()+'%';$('d-pp').textContent=progPct()+'%';
   const dows=['日','月','火','水','木','金','土'];
   const ws=new Date(TODAY);ws.setDate(ws.getDate()-ws.getDay());
-  $('d-week').innerHTML=Array.from({length:7},(_,i)=>{const d2=new Date(ws);d2.setDate(d2.getDate()+i);const ds=d2.toISOString().split('T')[0];const tr=S.calDays[ds]&&S.calDays[ds].trained;const isT=ds===TDS;return`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--bg2);font-size:11px"><span style="width:14px;color:var(--ink3)">${dows[i]}</span><span style="font-family:'JetBrains Mono',monospace;color:var(--ink3)">${ds.slice(5)}</span><span style="margin-left:auto;${isT?'font-weight:700;color:var(--red);':''}${tr?'color:var(--green);font-weight:700;':''}">${tr?'✓':isT?'今日':'—'}</span></div>`;}).join('');
+  $('d-week').innerHTML=Array.from({length:7},(_,i)=>{const d2=new Date(ws);d2.setDate(d2.getDate()+i);const ds=ymd(d2);const tr=S.calDays[ds]&&S.calDays[ds].trained;const isT=ds===TDS;return`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--bg2);font-size:11px"><span style="width:14px;color:var(--ink3)">${dows[i]}</span><span style="font-family:'JetBrains Mono',monospace;color:var(--ink3)">${ds.slice(5)}</span><span style="margin-left:auto;${isT?'font-weight:700;color:var(--red);':''}${tr?'color:var(--green);font-weight:700;':''}">${tr?'✓':isT?'今日':'—'}</span></div>`;}).join('');
   $('d-phase').innerHTML=CL_DATA.map(p=>{const t=p.items.length,d2=p.items.filter(i=>S.checks[i.id]).length,pct=Math.round(d2/t*100);return`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span style="font-weight:700">${p.phase}</span><span style="color:var(--ink3)">${d2}/${t}</span></div><div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--green);border-radius:2px"></div></div></div>`;}).join('');
   const sl=S.sleepLog.find(l=>l.date===TDS)||S.sleepLog[S.sleepLog.length-1];
   $('d-sleep').innerHTML=sl?`<div style="font-family:'DM Serif Display',serif;font-size:26px">${sl.hours}h</div><div style="font-size:11px;color:var(--ink3)">質: ${'★'.repeat(sl.quality)}${'☆'.repeat(5-sl.quality)}</div>`:`<div style="color:var(--ink4);font-size:12px">未記録</div><button class="btn btn-ghost btn-sm" style="margin-top:5px" onclick="nav('sleep')">記録する</button>`;
@@ -1360,7 +1384,7 @@ function renderWater(){
 function toggleWaterCup(i){const cur=S.waterLog[TDS]||0;S.waterLog[TDS]=i<cur?i:i+1;save();renderWater();}
 function drawWaterChart(){
   const canvas=$('water-chart');if(!canvas)return;
-  const days=Array.from({length:7},(_,i)=>{const d=new Date(TODAY);d.setDate(d.getDate()-6+i);return d.toISOString().split('T')[0];});
+  const days=Array.from({length:7},(_,i)=>{const d=new Date(TODAY);d.setDate(d.getDate()-6+i);return ymd(d);});
   const vals=days.map(d=>S.waterLog[d]||0);
   const W=canvas.parentElement.offsetWidth-22,H=100;canvas.width=W;canvas.height=H;
   const ctx=canvas.getContext('2d');ctx.clearRect(0,0,W,H);
@@ -1377,7 +1401,7 @@ function drawWaterChart(){
 
 function trainDateShift(d){
   if(d===0){trainViewDate=TDS;}
-  else{const dt=new Date(trainViewDate);dt.setDate(dt.getDate()+d);trainViewDate=dt.toISOString().split('T')[0];}
+  else{const dt=new Date(trainViewDate);dt.setDate(dt.getDate()+d);trainViewDate=ymd(dt);}
   renderTraining();
 }
 
@@ -1561,7 +1585,7 @@ function delTrainLog(date, i){
 
 function drawTrainWeekChart(){
   const canvas=document.getElementById('train-week-chart');if(!canvas)return;
-  const days=Array.from({length:7},(_,i)=>{const d=new Date(trainViewDate);d.setDate(d.getDate()-6+i);return d.toISOString().split('T')[0];});
+  const days=Array.from({length:7},(_,i)=>{const d=new Date(trainViewDate);d.setDate(d.getDate()-6+i);return ymd(d);});
   const vals=days.map(d=>{const logs=getTrainLogs(d);return{min:logs.reduce((a,l)=>a+(l.minutes||0),0),count:logs.length};});
   const W=canvas.parentElement.offsetWidth-24,H=120;
   canvas.width=W;canvas.height=H;
@@ -1754,7 +1778,7 @@ const FOOD_PRESETS = [
 
 function foodDateShift(d){
   if(d===0){foodViewDate=TDS;}
-  else{const dt=new Date(foodViewDate);dt.setDate(dt.getDate()+d);foodViewDate=dt.toISOString().split('T')[0];}
+  else{const dt=new Date(foodViewDate);dt.setDate(dt.getDate()+d);foodViewDate=ymd(dt);}
   renderFood();
 }
 
@@ -1900,7 +1924,7 @@ function delFoodLog(date,i){
 
 function drawFoodWeekChart(){
   const canvas=$('food-week-chart');if(!canvas)return;
-  const days=Array.from({length:7},(_,i)=>{const d=new Date(foodViewDate);d.setDate(d.getDate()-6+i);return d.toISOString().split('T')[0];});
+  const days=Array.from({length:7},(_,i)=>{const d=new Date(foodViewDate);d.setDate(d.getDate()-6+i);return ymd(d);});
   const vals=days.map(d=>getFoodLogs(d).reduce((a,l)=>a+l.cal,0));
   const W=canvas.parentElement.offsetWidth-24,H=130;
   canvas.width=W;canvas.height=H;
@@ -1938,7 +1962,7 @@ function renderCalendar(){
   for(let d=1;d<=total;d++){
     const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const e=S.calDays[ds]||{};
-    const isT=ds===TDS,isSel=ds===calSelected;
+    const isT=ds===TDS;
     let dots='';
     if(e.type==='badminton'||e.type==='both')dots+=`<div class="cal-dot" style="background:var(--green)"></div>`;
     if(e.type==='training'||e.type==='both')dots+=`<div class="cal-dot" style="background:var(--blue)"></div>`;
@@ -1948,16 +1972,16 @@ function renderCalendar(){
     if(hasDiary)dots+=`<div class="cal-dot" style="background:var(--ink3)"></div>`;
     const wEntry=S.wLog.find(wl=>wl.d===ds);
     let cls='cal-day';
-    if(e.trained)cls+=' trained';if(isT)cls+=' today';if(isSel)cls+=' selected';
+    if(e.trained)cls+=' trained';if(isT)cls+=' today';
     html+=`<div class="${cls}" onclick="selectCalDay('${ds}')"><div class="cal-day-num">${d}</div><div class="cal-dots">${dots}</div>${wEntry?`<div class="cal-day-weight">${wEntry.w}</div>`:''}${mt2?`<div class="cal-day-motive">💪${mt2}</div>`:''}${e.note?`<div class="cal-day-note">${e.note}</div>`:''}</div>`;
   }
   $('cal-days').innerHTML=html;
   const allT=Object.entries(S.calDays).filter(([,v])=>v&&v.trained);
   $('cs-total').textContent=allT.length;
-  let str=0;const c2=new Date(TODAY);while(true){const s=c2.toISOString().split('T')[0];if(S.calDays[s]&&S.calDays[s].trained){str++;c2.setDate(c2.getDate()-1);}else break;}
+  let str=0;const c2=new Date(TODAY);while(true){const s=ymd(c2);if(S.calDays[s]&&S.calDays[s].trained){str++;c2.setDate(c2.getDate()-1);}else break;}
   $('cs-streak').textContent=str;
   const ws=new Date(TODAY);ws.setDate(ws.getDate()-ws.getDay());
-  $('cs-week').textContent=allT.filter(([d])=>d>=ws.toISOString().split('T')[0]).length;
+  $('cs-week').textContent=allT.filter(([d])=>d>=ymd(ws)).length;
   const mStr=String(m+1).padStart(2,'0');
   $('cs-month').textContent=allT.filter(([d])=>d.startsWith(`${y}-${mStr}`)).length;
 }
@@ -2234,7 +2258,7 @@ function toggleCheck(id,el){S.checks[id]=!S.checks[id];el.classList.toggle('done
 function addReview(){
   const ws=new Date(TODAY);ws.setDate(ws.getDate()-ws.getDay());
   const we=new Date(ws);we.setDate(we.getDate()+6);
-  const label=ws.toISOString().split('T')[0]+'〜'+we.toISOString().split('T')[0];
+  const label=ymd(ws)+'〜'+ymd(we);
   if(!S.weeklyReview.find(r=>r.week===label)){S.weeklyReview.unshift({week:label,body:'',weight:curW()});save();}
   renderReview();
 }
@@ -2300,6 +2324,11 @@ renderMotive();renderTactics();renderMemos();
 
 // アプリ起動
 loadFromSupabase();
+
+
+
+
+
 
 
 
