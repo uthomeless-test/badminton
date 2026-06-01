@@ -866,8 +866,8 @@ const $=id=>document.getElementById(id);
 function safeText(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
 function safeHTML(id,v){const el=document.getElementById(id);if(el)el.innerHTML=v;}
 function daysLeft(){return Math.ceil((GOAL-TODAY)/86400000);}
-function curW(){return S.wLog.length?S.wLog[S.wLog.length-1].w:94;}
-function progPct(){return Math.min(100,Math.round(Math.max(0,94-curW())/16*100));}
+function curW(){return (S.wLog&&S.wLog.length)?S.wLog[S.wLog.length-1].w:94;}
+function progPct(){try{return Math.min(100,Math.round(Math.max(0,94-curW())/16*100));}catch{return 0;}}
 function bmiCalc(w){return+(w/(HT*HT)).toFixed(1);}
 function bmiLabel(b){return b<18.5?'低体重':b<25?'普通体重':b<30?'肥満(1度)':b<35?'肥満(2度)':b<40?'肥満(3度)':'肥満(4度)';}
 
@@ -902,10 +902,7 @@ function updateSidebar(){
   safeHTML('sb-weight', curW()+'<small style="font-size:11px">kg</small>');
   const _sbp=$('sb-prog');if(_sbp)_sbp.style.width=progPct()+'%';
 }
-safeText('dash-date', TODAY.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'}));
-
-$('w-date').value=TDS;
-updateSidebar();
+// date inits in initApp
 
 // ══════════════════════════════
 //  DASHBOARD
@@ -1900,6 +1897,10 @@ function addMemo(){S.memos.push({id:'m'+Date.now(),title:'新しいメモ',body:
 // ══════════════════════════════
 function initApp() {
   const lo=document.getElementById('loading-overlay');if(lo)lo.style.display='none';
+  const wd=$('w-date');if(wd)wd.value=TDS;
+  safeText('dash-date', TODAY.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'}));
+  safeText('food-date-label', TDS);
+  updateSidebar();
 renderDashboard();renderWeight();renderSleep();renderWater();
 renderTraining('june');renderFootwork();renderWorkout();renderMatch();
 renderFood();renderCalendar();renderChecklist();renderReview();
