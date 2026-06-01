@@ -420,10 +420,8 @@ textarea{resize:vertical;}
     <div class="sb-item" onclick="nav('food')"><span class="sb-icon">◉</span><span>食事管理</span></div>
     <div class="sb-item" onclick="nav('motive')"><span class="sb-icon">▲</span><span>モチベーション</span></div>
     <div class="sb-section">Training</div>
-    <div class="sb-item" onclick="nav('training')"><span class="sb-icon">◈</span><span>トレーニング</span></div>
+    <div class="sb-item" onclick="nav('training')"><span class="sb-icon">◈</span><span>練習管理</span></div>
     <div class="sb-item" onclick="nav('footwork')"><span class="sb-icon">🦵</span><span>フットワーク強化</span></div>
-    <div class="sb-item" onclick="nav('workout')"><span class="sb-icon">◐</span><span>筋トレログ</span></div>
-    <div class="sb-item" onclick="nav('match')"><span class="sb-icon">◆</span><span>試合記録</span></div>
     <div class="sb-section">Management</div>
     <div class="sb-item" onclick="nav('checklist')"><span class="sb-icon">☑</span><span>チェックリスト</span></div>
     <div class="sb-item" onclick="nav('review')"><span class="sb-icon">✦</span><span>週次振り返り</span></div>
@@ -547,31 +545,49 @@ textarea{resize:vertical;}
 
 <!-- TRAINING -->
 <div id="panel-training" class="panel">
-  <div class="ph"><div class="ph-left"><div class="ph-title">トレーニング</div><div class="ph-meta">平日19時以降 · 自重+ラン</div></div></div>
+  <div class="ph">
+    <div class="ph-left"><div class="ph-title">練習管理</div><div class="ph-meta" id="train-page-date"></div></div>
+    <div class="ph-actions">
+      <button class="btn btn-ghost btn-sm" onclick="trainDateShift(-1)">◀</button>
+      <button class="btn btn-primary btn-sm" onclick="trainDateShift(0)">今日</button>
+      <button class="btn btn-ghost btn-sm" onclick="trainDateShift(1)">▶</button>
+    </div>
+  </div>
   <div class="ca">
-    <div class="phase-tabs">
-      <div class="pt active" onclick="switchPhase('june',this)">6月</div>
-      <div class="pt" onclick="switchPhase('july',this)">7月</div>
-      <div class="pt" onclick="switchPhase('aug',this)">8月</div>
-      <div class="pt" onclick="switchPhase('sep',this)">9月</div>
-    </div>
-    <div class="card mb14"><div class="card-hd"><div class="card-title" id="phase-label">Phase 1</div><span class="tag tag-gray" id="phase-tgt"></span></div></div>
-    <div class="tr-grid mb16" id="training-grid"></div>
-    <div class="tabata-box">
-      <div style="font-family:'DM Serif Display',serif;font-size:17px;margin-bottom:10px">タバタ式タイマー</div>
-      <div class="tb-timer">
-        <div class="tb-phase work" id="tb-w"><div class="tb-time" id="tb-wt">20</div><div class="tb-plabel">Work</div></div>
-        <div class="tb-phase rest" id="tb-r"><div class="tb-time" id="tb-rt">10</div><div class="tb-plabel">Rest</div></div>
-        <div style="background:rgba(255,255,255,.1);padding:9px 12px;border-radius:3px;text-align:center;min-width:70px"><div style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700" id="tb-disp">20</div><div class="tb-plabel">Timer</div></div>
+    <!-- KPI -->
+    <div class="g4 mb16" id="train-kpi-row"></div>
+    <!-- 時間帯別カード -->
+    <div class="g2 mb16">
+      <div id="train-time-cards"></div>
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">練習を記録</div>
+          <button class="btn btn-primary btn-sm" onclick="openTrainLog()">＋ 追加</button>
+        </div>
+        <div id="train-log-list"></div>
+        <div style="padding:10px 13px;border-top:1px solid var(--border)">
+          <div class="sec-title" style="margin-bottom:7px">タバタタイマー</div>
+          <div style="background:var(--ink);color:white;padding:12px 14px;border-radius:3px">
+            <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+              <div class="tb-phase work" id="tb-w" style="min-width:60px"><div class="tb-time" id="tb-wt">20</div><div class="tb-plabel">Work</div></div>
+              <div class="tb-phase rest" id="tb-r" style="min-width:60px"><div class="tb-time" id="tb-rt">10</div><div class="tb-plabel">Rest</div></div>
+              <div style="background:rgba(255,255,255,.1);padding:8px 10px;border-radius:3px;text-align:center;min-width:60px"><div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700" id="tb-disp">20</div><div class="tb-plabel">Timer</div></div>
+            </div>
+            <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
+              <button class="tb-btn" id="tb-btn" onclick="tbToggle()">▶ スタート</button>
+              <button class="tb-btn" onclick="tbReset()" style="background:rgba(255,255,255,.2);color:white">リセット</button>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px">Set <span id="tb-set">0</span>/<span id="tb-tot">8</span></span>
+              <input type="number" id="tb-si" value="8" min="1" max="20" style="width:42px;background:rgba(255,255,255,.15);border:none;color:white;font-family:'JetBrains Mono',monospace;padding:4px 6px;border-radius:3px" onchange="tbSets(this.value)">
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="tb-controls">
-        <button class="tb-btn" id="tb-btn" onclick="tbToggle()">▶ スタート</button>
-        <button class="tb-btn" onclick="tbReset()" style="background:rgba(255,255,255,.2);color:white">リセット</button>
-        <span style="font-family:'JetBrains Mono',monospace;font-size:12px">Set <span id="tb-set">0</span>/<span id="tb-tot">8</span></span>
-        <input type="number" id="tb-si" value="8" min="1" max="20" style="width:46px;background:rgba(255,255,255,.15);border:none;color:white;font-family:'JetBrains Mono',monospace;padding:5px 6px;border-radius:3px" onchange="tbSets(this.value)">
-      </div>
     </div>
-    <div class="card"><div class="card-hd"><div class="card-title">週末バドミントン チェック</div></div><div style="padding:12px" id="bado-check"></div></div>
+    <!-- 週間グラフ -->
+    <div class="card">
+      <div class="card-hd"><div class="card-title">週間練習サマリー</div></div>
+      <div style="padding:11px;height:130px;position:relative"><canvas id="train-week-chart"></canvas></div>
+    </div>
   </div>
 </div>
 
@@ -586,34 +602,6 @@ textarea{resize:vertical;}
       </div>
     </div>
     <div id="fw-content"></div>
-  </div>
-</div>
-
-<!-- WORKOUT -->
-<div id="panel-workout" class="panel">
-  <div class="ph"><div class="ph-left"><div class="ph-title">筋トレログ</div></div><div class="ph-actions"><button class="btn btn-primary btn-sm" onclick="openModal('workout')">＋ 記録</button></div></div>
-  <div class="ca">
-    <div class="g4 mb16">
-      <div class="stat"><div class="stat-num" id="wk-total">0</div><div class="stat-label">累計</div></div>
-      <div class="stat"><div class="stat-num" id="wk-week">0</div><div class="stat-label">今週</div></div>
-      <div class="stat"><div class="stat-num" id="wk-squat">0</div><div class="stat-label">累計スクワット</div></div>
-      <div class="stat"><div class="stat-num" id="wk-burpee">0</div><div class="stat-label">累計バーピー</div></div>
-    </div>
-    <div class="card" id="workout-list-wrap"></div>
-  </div>
-</div>
-
-<!-- MATCH -->
-<div id="panel-match" class="panel">
-  <div class="ph"><div class="ph-left"><div class="ph-title">試合記録</div></div><div class="ph-actions"><button class="btn btn-primary btn-sm" onclick="openModal('match')">＋ 記録</button></div></div>
-  <div class="ca">
-    <div class="g4 mb16">
-      <div class="stat"><div class="stat-num" id="m-total">0</div><div class="stat-label">総試合数</div></div>
-      <div class="stat"><div class="stat-num" id="m-win">0</div><div class="stat-label">勝利</div></div>
-      <div class="stat"><div class="stat-num" id="m-lose">0</div><div class="stat-label">敗戦</div></div>
-      <div class="stat"><div class="stat-num" id="m-rate">—</div><div class="stat-label">勝率</div></div>
-    </div>
-    <div class="card" id="match-list-wrap"></div>
   </div>
 </div>
 
@@ -794,7 +782,9 @@ textarea{resize:vertical;}
 </style>
 
 
+
 <script>
+
 
 
 
@@ -875,6 +865,7 @@ def('opponents',[]);def('foodChecks',{});def('calMonth',{y:2026,m:5});
 def('sleepLog',[]);def('waterLog',{});def('workoutLog',[]);def('matchLog',[]);
 def('motiveLog',[]);def('weeklyReview',[]);def('motiveSelected',5);
 def('footworkLog',{});
+def('trainLogs',{});
 
 }
 
@@ -901,7 +892,7 @@ function closeSidebar(){$('sidebar').classList.remove('open');$('sb-overlay').cl
 // ══════════════════════════════
 //  NAV
 // ══════════════════════════════
-const NAVMAP={dashboard:0,calendar:1,weight:2,sleep:3,water:4,food:5,motive:6,training:7,footwork:8,workout:9,match:10,checklist:11,review:12,tactics:13,memo:14,day:15};
+const NAVMAP={dashboard:0,calendar:1,weight:2,sleep:3,water:4,food:5,motive:6,training:7,footwork:8,checklist:9,review:10,tactics:11,memo:12,day:13};
 const BN_IDS=['dashboard','calendar','footwork','training','checklist'];
 function nav(id){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
@@ -912,7 +903,7 @@ function nav(id){
   const bni=BN_IDS.indexOf(id);if(bni>=0)document.querySelectorAll('.bn-item')[bni].classList.add('active');
   safeText('mob-title', PAGE_TITLES[id]||id);
   closeSidebar();
-  const fn={dashboard:renderDashboard,calendar:renderCalendar,weight:renderWeight,sleep:renderSleep,water:renderWater,food:renderFood,motive:renderMotive,training:()=>renderTraining('june'),footwork:renderFootwork,workout:renderWorkout,match:renderMatch,checklist:renderChecklist,review:renderReview,tactics:renderTactics,memo:renderMemos};
+  const fn={dashboard:renderDashboard,calendar:renderCalendar,weight:renderWeight,sleep:renderSleep,water:renderWater,food:renderFood,motive:renderMotive,training:()=>renderTraining('june'),footwork:renderFootwork,checklist:renderChecklist,review:renderReview,tactics:renderTactics,memo:renderMemos};
   if(fn[id])fn[id]();
 }
 
@@ -953,8 +944,7 @@ function renderDay(ds){
   const slEntry = S.sleepLog.find(s=>s.date===ds);
   const wc      = S.waterLog[ds] || 0;
   const fLogs   = (S.foodLogs && S.foodLogs[ds]) || [];
-  const wkLogs  = S.workoutLog.filter(l=>l.d===ds);
-  const mLogs   = S.matchLog.filter(l=>l.d===ds);
+
   const diary   = e.diary || '';
   const fwDone  = Object.keys(S.footworkLog[ds]||{}).filter(k=>!k.endsWith('_done')&&S.footworkLog[ds][k]).length;
 
@@ -1338,29 +1328,7 @@ function openModal(type){
       </div>
       <div class="form-row"><label class="form-label">メモ</label><input type="text" id="sl-memo" placeholder="体調など"></div>
       <button class="btn btn-primary btn-full" style="margin-top:4px" onclick="saveSleep()">保存する</button>`;
-  }else if(type==='workout'){
-    $('modal-title').textContent='筋トレを記録';
-    $('modal-body').innerHTML=`
-      <div class="form-row"><label class="form-label">日付</label><input type="date" id="wk-date" value="${window._wkDate||TDS}"></div>
-      <div class="form-row"><label class="form-label">種目</label><select id="wk-ex">${['スクワット','ランジ','カーフレイズ','プランク','腹筋','バーピー','サイドステップ','インターバルラン','タバタ','その他'].map(e=>`<option>${e}</option>`).join('')}</select></div>
-      <div class="form-row"><label class="form-label">セット数</label><input type="number" id="wk-sets" min="1" max="20" value="3"></div>
-      <div class="form-row"><label class="form-label">回数</label><input type="number" id="wk-reps" min="1" value="15"></div>
-      <div class="form-row"><label class="form-label">強度</label><select id="wk-int"><option>LOW</option><option selected>MID</option><option>HIGH</option></select></div>
-      <div class="form-row"><label class="form-label">メモ</label><input type="text" id="wk-memo" placeholder="フォームの感覚など"></div>
-      <button class="btn btn-primary btn-full" style="margin-top:4px" onclick="saveWorkout()">保存する</button>`;
-  }else if(type==='match'){
-    $('modal-title').textContent='試合を記録';
-    window._matchResult='win';
-    $('modal-body').innerHTML=`
-      <div class="form-row"><label class="form-label">日付</label><input type="date" id="mt-date" value="${window._matchDate||TDS}"></div>
-      <div class="form-row"><label class="form-label">相手</label><input type="text" id="mt-opp" placeholder="相手の特徴など"></div>
-      <div class="form-row"><label class="form-label">スコア</label><input type="text" id="mt-score" placeholder="21-15"></div>
-      <div class="form-row"><label class="form-label">結果</label>
-        <div class="toggle-group"><button class="tgl on" id="mt-win" onclick="setMatchResult('win')">✓ 勝利</button><button class="tgl" id="mt-lose" onclick="setMatchResult('lose')">✗ 敗戦</button></div>
-      </div>
-      <div class="form-row"><label class="form-label">気づき・課題</label><textarea id="mt-note" style="width:100%;min-height:72px" placeholder="今日の良かった点・課題など"></textarea></div>
-      <button class="btn btn-primary btn-full" style="margin-top:4px" onclick="saveMatch()">保存する</button>`;
-  }
+  
   $('modal-overlay').style.display='flex';
 }
 function closeModal(e){if(!e||e.target===$('modal-overlay')){$('modal-overlay').style.display='none';}}
@@ -1426,214 +1394,188 @@ function drawWaterChart(){
 // ══════════════════════════════
 //  TRAINING
 // ══════════════════════════════
-const TR_DATA={
-  june:[
-    {day:'月',content:'ウォーキング → 早歩き 30分',intensity:30,note:'平日最初の一歩。外に出ることが目的',detail:''},
-    {day:'火',content:'スクワット×15・ランジ×10・カーフレイズ×20（各3セット）',intensity:40,note:'自重。正しいフォームを意識',detail:'膝がつま先より出ないように'},
-    {day:'水',content:'早歩き → 軽いジョグ 30分',intensity:35,note:'息が上がらないペースでOK',detail:''},
-    {day:'木',content:'スクワット×15・プランク60秒・腹筋×20（各3セット）',intensity:40,note:'体幹を意識',detail:''},
-    {day:'金',content:'ジョグ 30分',intensity:35,note:'週末バドに備えて無理しない',detail:''},
-  ],
-  july:[
-    {day:'月',content:'ジョグ 40分',intensity:55,note:'ペースを少し上げる',detail:''},
-    {day:'火',content:'タバタ（スクワットジャンプ・バーピー）＋ 下半身',intensity:80,note:'きつければ4セットから',detail:''},
-    {day:'水',content:'ジョグ 40分',intensity:55,note:'',detail:''},
-    {day:'木',content:'タバタ（サイドステップ・前後ダッシュ）＋ 体幹',intensity:80,note:'コートの動きを意識',detail:''},
-    {day:'金',content:'ジョグ 40分',intensity:55,note:'週末前の調整',detail:''},
-  ],
-  aug:[
-    {day:'月',content:'インターバルラン（200m全力 × 8本）',intensity:90,note:'レスト90秒',detail:''},
-    {day:'火',content:'タバタ（コート動作模倣）＋ 下半身強化',intensity:90,note:'',detail:''},
-    {day:'水',content:'インターバルラン（200m全力 × 8本）',intensity:90,note:'',detail:''},
-    {day:'木',content:'タバタ ＋ 体幹強化',intensity:85,note:'',detail:''},
-    {day:'金',content:'軽めジョグ 40分',intensity:40,note:'週末前の調整',detail:''},
-  ],
-  sep:[
-    {day:'月',content:'ジョグ 30分',intensity:30,note:'疲れを残さない',detail:''},
-    {day:'火',content:'軽い下半身トレ ＋ ストレッチ',intensity:25,note:'',detail:''},
-    {day:'水',content:'ジョグ 30分',intensity:30,note:'',detail:''},
-    {day:'木',content:'軽い体幹 ＋ ストレッチ',intensity:25,note:'大会が近い週は休んでもOK',detail:''},
-    {day:'金',content:'ウォーキング ＋ ストレッチのみ',intensity:15,note:'完全回復優先',detail:''},
-  ]
-};
-const PM={june:{label:'Phase 1 — 習慣の構築',tgt:'目標：−3kg・継続習慣の確立'},july:{label:'Phase 2 — 負荷を上げる',tgt:'目標：−9kg・タバタ完走'},aug:{label:'Phase 3 — バドミントン特化',tgt:'目標：−12kg・試合で通用する体力'},sep:{label:'Phase 4 — 調整・勝ちパターン',tgt:'目標：−16kg'}};
-function switchPhase(k,el){document.querySelectorAll('.phase-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderTraining(k);}
-function renderTraining(k){
-  $('phase-label').textContent=PM[k].label;$('phase-tgt').textContent=PM[k].tgt;
-  const _tg=$('training-grid');if(_tg)_tg.innerHTML=TR_DATA[k].map(d=>{const ic=d.intensity>=80?'var(--red)':d.intensity>=55?'var(--amber)':'var(--green)';const il=d.intensity>=80?'HIGH':d.intensity>=55?'MID':'LOW';return`<div class="tr-card"><div class="tr-card-hd"><div class="tr-day">${d.day}曜日</div><span class="tag" style="background:${ic}18;color:${ic};margin-left:auto">${il}</span></div><div style="height:3px;background:var(--bg3)"><div style="height:100%;width:${d.intensity}%;background:${ic}"></div></div><div class="tr-body"><div class="tr-main">${d.content}</div><div class="tr-detail">${d.detail}</div>${d.note?`<div class="tr-note">${d.note}</div>`:''}</div></div>`;}).join('');
-  const bcItems=['サークルに参加した','試合形式で対戦した','諦めずにラリーを続けた','フットワークを意識した','疲れてもフォームを崩さなかった','勝ちパターンを試した'];
-  $('bado-check').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${bcItems.map((item,i)=>{const key='bc_'+i+'_'+TDS;const done=S.checks[key];return`<div class="cl-item ${done?'done':''}" onclick="toggleCheck('${key}',this)"><input type="checkbox" ${done?'checked':''}><span style="font-size:12px;margin-left:6px">${item}</span></div>`;}).join('')}</div>`;
-}
-let TB={run:false,phase:'work',time:20,set:0,sets:8,iv:null};
-function tbToggle(){if(TB.run){clearInterval(TB.iv);TB.run=false;$('tb-btn').textContent='▶ 再開';}else{TB.run=true;$('tb-btn').textContent='⏸ 一時停止';TB.iv=setInterval(tbTick,1000);}}
-function tbTick(){TB.time--;if(TB.time<0){if(TB.phase==='work'){TB.phase='rest';TB.time=10;}else{TB.set++;if(TB.set>=TB.sets){tbDone();return;}TB.phase='work';TB.time=20;}}$('tb-disp').textContent=TB.time;$('tb-set').textContent=TB.set;$('tb-w').style.opacity=TB.phase==='work'?1:.4;$('tb-r').style.opacity=TB.phase==='rest'?1:.4;}
-function tbDone(){clearInterval(TB.iv);TB.run=false;$('tb-btn').textContent='完了！';$('tb-disp').textContent='完';}
-function tbReset(){clearInterval(TB.iv);TB={run:false,phase:'work',time:20,set:0,sets:TB.sets,iv:null};$('tb-btn').textContent='▶ スタート';$('tb-disp').textContent=20;$('tb-set').textContent=0;}
-function tbSets(v){TB.sets=parseInt(v)||8;$('tb-tot').textContent=TB.sets;}
-
-// ══════════════════════════════
-//  FOOTWORK TRAINING
-// ══════════════════════════════
-const FW_CATEGORIES=[
-  {
-    id:'agility',name:'素早い切り返し',icon:'⚡',color:'var(--red)',
-    desc:'コート内での急停止・方向転換能力。足がもつれる原因の1位。',
-    menus:[
-      {id:'fw1',name:'ラダードリル（2ステップ）',sets:'3セット × 往復',level:'初級',detail:'ラダーの各マスに両足を交互に入れる。膝を上げてテンポよく。ラダーがなければ床にテープで代用。',point:'膝を高く上げ体幹をまっすぐ保つ'},
-      {id:'fw2',name:'Tドリル（T字ダッシュ）',sets:'5本 × 2セット',level:'中級',detail:'中央→前→左→右→前→後ろのTコースをダッシュ。バドのコートサイズを想定して8m×4m程度。',point:'足を交差させず常に体を正面に向ける'},
-      {id:'fw3',name:'バウンディング（跳躍系）',sets:'20m × 4本',level:'中級',detail:'大きく踏み込みながら前進するジャンプ走。接地時間を短くすることを意識。',point:'腕を大きく振り推進力を高める'},
-      {id:'fw4',name:'コーンジグザグドリル',sets:'4本 × 3セット',level:'中級',detail:'5個のコーンを1m間隔で並べジグザグに通過。なるべく速く、体幹を安定させながら。',point:'コーンの外側で踏ん張りすぐ次へ向く'},
-    ]
-  },
-  {
-    id:'split',name:'スプリットステップ',icon:'🦵',color:'var(--blue)',
-    desc:'相手が打つ瞬間に軽くジャンプして着地し次の動きに備えるバドミントンの基本動作。',
-    menus:[
-      {id:'fw5',name:'スプリットステップ連続練習',sets:'30回 × 3セット',level:'初級',detail:'両足を肩幅に開き軽くジャンプ→着地を繰り返す。着地と同時に次の方向に重心を傾ける練習。',point:'つま先着地・膝を曲げてばね状態をキープ'},
-      {id:'fw6',name:'スプリット→サイドステップ',sets:'10往復 × 3セット',level:'中級',detail:'スプリットして着地後すぐにサイドステップで3歩移動。左右を交互に繰り返す。',point:'着地後0.1秒でステップを開始するイメージ'},
-      {id:'fw7',name:'動画見ながらスプリット模倣',sets:'1ゲーム分',level:'初級',detail:'バドの試合動画を見ながら相手が打つ瞬間に実際にスプリットステップを踏む。反応の練習。',point:'「見てから動く」から「予測して動く」へ'},
-    ]
-  },
-  {
-    id:'lateral',name:'サイドの速い動き',icon:'↔️',color:'var(--green)',
-    desc:'ネット前・サイドへの素早い移動。バドでは横の動きが最も多用される。',
-    menus:[
-      {id:'fw8',name:'シャトルラン（サイドステップ）',sets:'10往復 × 3セット',level:'初級',detail:'コートの幅（6m）をサイドステップで往復。足を交差させずスライドステップで移動する。',point:'腰を落として低重心を保つ'},
-      {id:'fw9',name:'クロスオーバーステップ',sets:'10往復 × 3セット',level:'中級',detail:'サイドに移動する際、後ろの足を前の足の前でクロスさせ大きく移動する。',point:'体が正面を向いたままクロスする'},
-      {id:'fw10',name:'ランジ→即リターン',sets:'12回 × 3セット',level:'初級',detail:'サイドに大きくランジを踏み→すぐに元の位置に戻る。バドのサイドへの踏み込みを模倣。',point:'踏み込んだ足のかかとでしっかり蹴り返す'},
-      {id:'fw11',name:'サイドボックスジャンプ',sets:'20回 × 3セット',level:'上級',detail:'低めのボックス（20〜30cm）の横に立ちサイドジャンプで飛び乗り→反対側に飛び降りる。',point:'両足同時着地・膝を曲げてショックを吸収'},
-    ]
-  },
-  {
-    id:'forward',name:'前後の動き（ネット前）',icon:'⬆️',color:'var(--amber)',
-    desc:'ネット前への突き込みと後方への素早い戻り。バック奥への対応も含む。',
-    menus:[
-      {id:'fw12',name:'ネット前チャイニーズステップ',sets:'20回 × 3セット',level:'中級',detail:'前方に右足→左足と素早く踏み込み→バックステップで戻る動作を繰り返す。',point:'前に出た後のバックステップを素早く'},
-      {id:'fw13',name:'前後ダッシュ（5m折り返し）',sets:'10本 × 3セット',level:'初級',detail:'ベースライン←→ネット前5mをダッシュ＆折り返し。方向転換時に体幹を倒さない。',point:'折り返しは足の外側でブレーキ→すぐ蹴り出し'},
-      {id:'fw14',name:'バックランジ交互',sets:'12回 × 3セット',level:'初級',detail:'後方へランジを踏み元に戻る。後退する際の体幹安定を鍛える。',point:'上体が前に倒れないよう視線は正面'},
-    ]
-  },
-  {
-    id:'endurance',name:'フットワーク持久力',icon:'🔥',color:'var(--purple)',
-    desc:'試合終盤でも足が動き続ける持久的な能力。疲れると足がもつれる原因。',
-    menus:[
-      {id:'fw15',name:'6点フットワーク（コート全体）',sets:'1分 × 5セット（レスト1分）',level:'上級',detail:'バドのコート6カ所（前2・中2・後2）をランダム順で全力移動。コーチや動画の指示に従う。',point:'最後の1分でも初動スピードを落とさない'},
-      {id:'fw16',name:'インターバルサイドステップ',sets:'30秒全力+30秒休憩 × 8セット',level:'上級',detail:'30秒間ひたすらサイドステップ。タバタ式の応用版。',point:'30秒間フォームを崩さないことを最優先'},
-      {id:'fw17',name:'連続スクワットジャンプ',sets:'15回 × 4セット',level:'中級',detail:'深くしゃがんで全力ジャンプ→着地後すぐ次のジャンプ。接地時間を最小化する。',point:'着地時に膝が内側に入らないよう注意'},
-      {id:'fw18',name:'ロングランジウォーク',sets:'20m × 3往復',level:'初級',detail:'広いランジで歩き続ける。1歩ずつ深く踏み込んで太もも〜臀部を鍛える。',point:'後ろの膝が床に付くくらい深く踏み込む'},
-    ]
-  },
-  {
-    id:'balance',name:'バランス・体幹安定',icon:'⚖',color:'var(--teal)',
-    desc:'1本足での安定・体幹の安定がないとショット精度が落ちる。全動作の基盤。',
-    menus:[
-      {id:'fw19',name:'シングルレッグデッドリフト',sets:'10回 × 3セット（左右）',level:'中級',detail:'片足立ちで上体を前傾させ→戻る。股関節の安定と体幹を同時強化。',point:'軸足の膝を軽く曲げ体が横に傾かないよう'},
-      {id:'fw20',name:'バランスボード（なければ片足立ち）',sets:'30秒 × 4セット（左右）',level:'初級',detail:'片足立ちで30秒キープ。慣れたら目を閉じる・頭を動かす・腕を動かすなどの負荷追加。',point:'グラつきを体幹で吸収するイメージ'},
-      {id:'fw21',name:'プランクウォーク',sets:'10往復 × 3セット',level:'中級',detail:'プランク姿勢から手を交互に出して前進・後退。体幹と肩の安定を同時強化。',point:'腰が左右に振れないよう腹圧をかける'},
-      {id:'fw22',name:'側臥位アブダクション（股関節外転）',sets:'20回 × 3セット（左右）',level:'初級',detail:'横向きに寝て上の足を天井方向に上げる。サイドステップ時に使う中臀筋を強化。',point:'つま先を少し下に向けると中臀筋に効く'},
-    ]
-  }
-];
-
-let fwSelected={};
-function renderFootwork(){
-  const el=$('fw-content');
-  if(!el)return;
-  el.innerHTML=FW_CATEGORIES.map(cat=>`
-    <div class="card mb16">
-      <div class="card-hd" style="border-left:3px solid ${cat.color}">
-        <div style="display:flex;align-items:center;gap:8px;min-width:0">
-          <span style="font-size:18px;flex-shrink:0">${cat.icon}</span>
-          <div style="min-width:0">
-            <div class="card-title" style="color:${cat.color}">${cat.name}</div>
-            <div style="font-size:11px;color:var(--ink3);margin-top:1px">${cat.desc}</div>
-          </div>
-        </div>
-      </div>
-      <div class="fw-grid">
-        ${cat.menus.map(menu=>{
-          const sel=!!(S.footworkLog[TDS]&&S.footworkLog[TDS][menu.id]);
-          const lc=menu.level==='初級'?'var(--green)':menu.level==='中級'?'var(--amber)':'var(--red)';
-          return`<div class="fw-card ${sel?'selected':''}" onclick="toggleFW('${menu.id}','${cat.id}')">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
-              <div class="fw-card-name">${menu.name}</div>
-              <span style="font-size:9px;color:${lc};border:1px solid ${lc};padding:1px 5px;border-radius:2px;font-weight:700;flex-shrink:0;white-space:nowrap">${menu.level}</span>
-            </div>
-            <div class="fw-card-sets">${menu.sets}</div>
-            <div class="fw-card-detail">${menu.detail}</div>
-            <div class="fw-card-point" style="color:${cat.color}">💡 ${menu.point}</div>
-            <div class="fw-card-action">${sel?'✓ 選択中（タップで解除）':'タップで選択'}</div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>
-  `).join('')+`
-  <div class="card" style="border:2px solid var(--red)">
-    <div class="card-hd" style="background:var(--red-light)">
-      <div class="card-title" style="color:var(--red)">今日の選択メニュー</div>
-      <button class="btn btn-danger btn-sm" onclick="clearFW()">リセット</button>
-    </div>
-    <div style="padding:13px" id="fw-plan-body"></div>
-  </div>`;
-  renderFWPlan();
-}
-
-function toggleFW(menuId,catId){
-  if(!S.footworkLog[TDS])S.footworkLog[TDS]={};
-  S.footworkLog[TDS][menuId]=!S.footworkLog[TDS][menuId];
-  save();renderFootwork();
-}
-function clearFW(){if(S.footworkLog[TDS])delete S.footworkLog[TDS];save();renderFootwork();}
-function renderFWPlan(){
-  const el=$('fw-plan-body');if(!el)return;
-  const todayLog=S.footworkLog[TDS]||{};
-  const selected=[];
-  FW_CATEGORIES.forEach(cat=>cat.menus.forEach(m=>{if(todayLog[m.id])selected.push({...m,catName:cat.name,catColor:cat.color});}));
-  if(!selected.length){el.innerHTML='<div style="color:var(--ink4);font-size:12px">上のカードをタップして今日の練習を選択</div>';return;}
-  const doneCount=selected.filter(m=>todayLog[m.id+'_done']).length;
-  el.innerHTML=`<div style="font-size:12px;color:var(--ink3);margin-bottom:9px">${selected.length}種目選択 — 完了: <strong style="color:var(--green)">${doneCount}/${selected.length}</strong></div>`+
-  selected.map(m=>`<div class="fw-plan-item">
-    <div class="fw-done-btn ${(todayLog[m.id+'_done'])?'done':''}" onclick="toggleFWDone('${m.id}')">${todayLog[m.id+'_done']?'✓':''}</div>
-    <div style="flex:1;min-width:0">
-      <div style="font-weight:700;font-size:12px;${todayLog[m.id+'_done']?'text-decoration:line-through;color:var(--ink3)':''}">${m.name}</div>
-      <div style="font-size:11px;color:var(--ink3)">${m.catName} · ${m.sets}</div>
-    </div>
-  </div>`).join('');
-}
-
-function toggleFWDone(menuId){
-  if(!S.footworkLog[TDS])S.footworkLog[TDS]={};
-  S.footworkLog[TDS][menuId+'_done']=!S.footworkLog[TDS][menuId+'_done'];
-  save();renderFWPlan();
-}
-
 // ══════════════════════════════
 //  WORKOUT / MATCH
 // ══════════════════════════════
-function saveWorkout(){
-  const d=$('wk-date').value,ex=$('wk-ex').value,sets=+$('wk-sets').value,reps=+$('wk-reps').value,intensity=$('wk-int').value,memo=$('wk-memo').value;
-  if(!d)return;S.workoutLog.push({d,ex,sets,reps,intensity,memo});S.workoutLog.sort((a,b)=>a.d.localeCompare(b.d));save();closeModal();
-  if(window._wkDate){const _d=window._wkDate;window._wkDate=null;renderDay(_d);}else{renderWorkout();}
+
+
+
+
+
+
+function trainDateShift(d){
+  if(d===0){trainViewDate=TDS;}
+  else{const dt=new Date(trainViewDate);dt.setDate(dt.getDate()+d);trainViewDate=dt.toISOString().split('T')[0];}
+  renderTraining();
 }
-function delWorkout(i){S.workoutLog.splice(i,1);save();renderWorkout();}
-function renderWorkout(){
-  const logs=S.workoutLog;$('wk-total').textContent=logs.length;
-  const ws=new Date(TODAY);ws.setDate(ws.getDate()-ws.getDay());
-  $('wk-week').textContent=logs.filter(l=>l.d>=ws.toISOString().split('T')[0]).length;
-  $('wk-squat').textContent=logs.filter(l=>l.ex==='スクワット').reduce((a,l)=>a+l.sets*l.reps,0);
-  $('wk-burpee').textContent=logs.filter(l=>l.ex==='バーピー').reduce((a,l)=>a+l.sets*l.reps,0);
-  $('workout-list-wrap').innerHTML='<div class="card-hd"><div class="card-title">記録履歴</div></div>'+([...logs].reverse().map((l,ri)=>{const i=logs.length-1-ri;const ic=l.intensity==='HIGH'?'var(--red)':l.intensity==='MID'?'var(--amber)':'var(--green)';return`<div class="lr"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;min-width:80px">${l.d}</span><span style="font-weight:700;min-width:78px">${l.ex}</span><span style="min-width:54px">${l.sets}×${l.reps}</span><span style="color:${ic};font-size:10px;font-weight:700;min-width:34px">${l.intensity}</span><span style="font-size:11px;color:var(--ink3);flex:1">${l.memo||''}</span><button class="btn btn-danger btn-sm" onclick="delWorkout(${i})">削除</button></div>`;}).join('')||'<div style="padding:13px;color:var(--ink4);font-size:12px">記録なし</div>');
+
+function getTrainLogs(date){
+  if(!S.trainLogs)S.trainLogs={};
+  return S.trainLogs[date]||[];
 }
-function saveMatch(){
-  const d=$('mt-date').value,opp=$('mt-opp').value,score=$('mt-score').value,result=window._matchResult||'lose',note=$('mt-note').value;
-  if(!d)return;S.matchLog.push({d,opp,score,result,note});S.matchLog.sort((a,b)=>a.d.localeCompare(b.d));save();closeModal();
-  if(window._matchDate){const _d=window._matchDate;window._matchDate=null;renderDay(_d);}else{renderMatch();}
+
+function renderTraining(){
+  if(!S.trainLogs)S.trainLogs={};
+  const d = trainViewDate;
+  const dobj = new Date(d);
+  const dow = ['日','月','火','水','木','金','土'][dobj.getDay()];
+  safeText('train-page-date', d+'（'+dow+'）'+(d===TDS?' — 今日':''));
+
+  const logs = getTrainLogs(d);
+  const totalMin = logs.reduce((a,l)=>a+(l.minutes||0),0);
+  const totalSets = logs.reduce((a,l)=>a+(l.sets||0),0);
+  const highCount = logs.filter(l=>l.intensity==='HIGH').length;
+  const trainDays = Object.keys(S.trainLogs||{}).filter(k=>S.trainLogs[k]&&S.trainLogs[k].length>0).length;
+
+  // KPI
+  safeHTML('train-kpi-row', [
+    {label:'練習時間',   val: totalMin ? totalMin+'分' : '—',  sub:'本日合計',       color:'k-blue'},
+    {label:'セット数',   val: totalSets||'—',                   sub:'本日合計',       color:'k-green'},
+    {label:'高強度',     val: highCount||'—',                   sub:'HIGH種目数',     color:'k-red'},
+    {label:'累計練習日', val: trainDays,                         sub:'全期間',         color:'k-amber'},
+  ].map(k=>`<div class="kpi ${k.color}"><div class="kpi-label">${k.label}</div><div class="kpi-value" style="font-size:22px">${k.val}</div><div class="kpi-sub">${k.sub}</div></div>`).join(''));
+
+  // 時間帯別カード（食事管理と同じ構造）
+  safeHTML('train-time-cards', TRAIN_TIMES.map(time=>{
+    const timeLogs = logs.filter(l=>l.time===time);
+    const timeMin  = timeLogs.reduce((a,l)=>a+(l.minutes||0),0);
+    const ic = TRAIN_COLORS[time];
+    return`<div class="card" style="margin-bottom:10px">
+      <div class="card-hd" style="border-left:3px solid ${ic}">
+        <div style="display:flex;align-items:center;gap:7px">
+          <span style="font-size:17px">${TRAIN_ICONS[time]}</span>
+          <div class="card-title">${time}</div>
+          ${timeMin>0?`<span style="font-size:11px;color:var(--ink3);font-family:'JetBrains Mono',monospace">${timeMin}分</span>`:''}
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="openTrainLog('${time}')">＋ 追加</button>
+      </div>
+      ${timeLogs.length
+        ? timeLogs.map((l,i)=>{
+            const gi=logs.indexOf(l);
+            const ic2=l.intensity==='HIGH'?'var(--red)':l.intensity==='MID'?'var(--amber)':'var(--green)';
+            return`<div style="display:flex;align-items:center;gap:8px;padding:7px 13px;border-bottom:1px solid var(--bg2);font-size:12px">
+              <span style="font-weight:700;flex:1">${l.name}</span>
+              ${l.minutes?`<span style="color:var(--ink3);font-family:'JetBrains Mono',monospace">${l.minutes}分</span>`:''}
+              ${l.sets?`<span style="color:var(--ink3)">${l.sets}set${l.reps?'×'+l.reps+'回':''}</span>`:''}
+              <span style="color:${ic2};font-size:10px;font-weight:700;border:1px solid ${ic2};padding:1px 4px;border-radius:2px">${l.intensity}</span>
+              <button class="btn btn-danger btn-sm" onclick="delTrainLog('${d}',${gi})">✕</button>
+            </div>`;
+          }).join('')
+        : `<div style="padding:8px 13px;font-size:12px;color:var(--ink4)">未記録 — ＋で追加</div>`}
+    </div>`;
+  }).join(''));
+
+  // 全ログリスト
+  safeHTML('train-log-list', logs.length
+    ? logs.map((l,i)=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 13px;border-bottom:1px solid var(--bg2);font-size:12px">
+        <span style="font-size:10px;padding:1px 6px;border-radius:2px;background:${TRAIN_COLORS[l.time]||'var(--bg2)'}18;color:${TRAIN_COLORS[l.time]||'var(--ink3)'};font-weight:700;flex-shrink:0">${l.time}</span>
+        <span style="flex:1;font-weight:700">${l.name}</span>
+        ${l.minutes?`<span style="color:var(--ink3);font-family:'JetBrains Mono',monospace">${l.minutes}分</span>`:''}
+        ${l.sets?`<span style="color:var(--ink3)">${l.sets}set</span>`:''}
+        <button class="btn btn-danger btn-sm" onclick="delTrainLog('${d}',${i})">✕</button>
+      </div>`).join('')
+    : '');
+
+  drawTrainWeekChart();
 }
-function delMatch(i){S.matchLog.splice(i,1);save();renderMatch();}
-function renderMatch(){
-  const logs=S.matchLog,wins=logs.filter(l=>l.result==='win').length;
-  $('m-total').textContent=logs.length;$('m-win').textContent=wins;$('m-lose').textContent=logs.length-wins;$('m-rate').textContent=logs.length?Math.round(wins/logs.length*100)+'%':'—';
-  $('match-list-wrap').innerHTML='<div class="card-hd"><div class="card-title">試合履歴</div></div>'+([...logs].reverse().map((l,ri)=>{const i=logs.length-1-ri;return`<div class="lr"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;min-width:80px">${l.d}</span><span style="min-width:68px">${l.opp||'—'}</span><span style="font-family:'JetBrains Mono',monospace;font-weight:700;min-width:48px">${l.score||'—'}</span><span class="win-badge ${l.result}">${l.result==='win'?'勝利':'敗戦'}</span><span style="font-size:11px;color:var(--ink3);flex:1;margin-left:8px">${l.note||''}</span><button class="btn btn-danger btn-sm" onclick="delMatch(${i})">削除</button></div>`;}).join('')||'<div style="padding:13px;color:var(--ink4);font-size:12px">記録なし</div>');
+
+function openTrainLog(defaultTime){
+  const presetHTML = TRAIN_PRESETS.map((p,i)=>`<button onclick="selectTrainPreset(${i})" id="tp-${i}" style="padding:4px 9px;background:var(--bg);border:1px solid var(--border);border-radius:3px;font-size:11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap;transition:all .15s">${p.name}<span style="color:var(--ink3);margin-left:3px;font-size:10px">${p.cat}</span></button>`).join('');
+
+  safeText('modal-title','練習を記録');
+  safeHTML('modal-body',`
+    <div class="form-row"><label class="form-label">時間帯</label>
+      <div class="toggle-group" id="train-time-btns">
+        ${TRAIN_TIMES.map(t=>`<button class="tgl ${t===defaultTime?'on':''}" onclick="selectTrainTime('${t}')">${TRAIN_ICONS[t]} ${t}</button>`).join('')}
+      </div>
+    </div>
+    <div class="form-row"><label class="form-label">プリセットから選ぶ</label>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;max-height:140px;overflow-y:auto;padding:2px 0">${presetHTML}</div>
+    </div>
+    <div style="border-top:1px solid var(--border);margin:11px 0;padding-top:11px">
+      <div class="sec-title" style="margin-bottom:8px">または手入力</div>
+      <div class="form-row"><label class="form-label">種目名</label><input type="text" id="ti-name" placeholder="例：スクワット"></div>
+      <div class="g2" style="gap:8px">
+        <div class="form-row"><label class="form-label">時間（分）</label><input type="number" id="ti-min" min="0" max="300" placeholder="30"></div>
+        <div class="form-row"><label class="form-label">セット数</label><input type="number" id="ti-sets" min="0" max="50" placeholder="3"></div>
+      </div>
+      <div class="g2" style="gap:8px">
+        <div class="form-row"><label class="form-label">回数</label><input type="number" id="ti-reps" min="0" max="200" placeholder="15"></div>
+        <div class="form-row"><label class="form-label">強度</label>
+          <select id="ti-intensity"><option>LOW</option><option selected>MID</option><option>HIGH</option></select>
+        </div>
+      </div>
+      <div class="form-row"><label class="form-label">メモ</label><input type="text" id="ti-memo" placeholder="気づきなど"></div>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="saveTrainLog()">記録する</button>
+  `);
+  window._trainTime = defaultTime || '夜';
+  document.getElementById('modal-overlay').style.display='flex';
+}
+
+function selectTrainTime(t){
+  window._trainTime = t;
+  document.querySelectorAll('#train-time-btns .tgl').forEach(b=>{
+    b.classList.toggle('on', b.textContent.includes(t));
+  });
+}
+
+function selectTrainPreset(i){
+  const p = TRAIN_PRESETS[i];
+  const ni=document.getElementById('ti-name');if(ni)ni.value=p.name;
+  const ii=document.getElementById('ti-intensity');if(ii)ii.value=p.intensity;
+  const mi=document.getElementById('ti-memo');if(mi)mi.value=p.memo;
+  document.querySelectorAll('[id^="tp-"]').forEach(b=>b.style.borderColor='var(--border)');
+  const sel=document.getElementById('tp-'+i);
+  if(sel){sel.style.borderColor='var(--red)';sel.style.background='var(--red-light)';}
+}
+
+function saveTrainLog(){
+  const name = (document.getElementById('ti-name')||{}).value;
+  if(!name||!name.trim()){alert('種目名を入力してください');return;}
+  if(!S.trainLogs)S.trainLogs={};
+  if(!S.trainLogs[trainViewDate])S.trainLogs[trainViewDate]=[];
+  S.trainLogs[trainViewDate].push({
+    time: window._trainTime||'夜',
+    name: name.trim(),
+    minutes: parseInt((document.getElementById('ti-min')||{}).value)||0,
+    sets:    parseInt((document.getElementById('ti-sets')||{}).value)||0,
+    reps:    parseInt((document.getElementById('ti-reps')||{}).value)||0,
+    intensity: (document.getElementById('ti-intensity')||{}).value||'MID',
+    memo:    ((document.getElementById('ti-memo')||{}).value||''),
+  });
+  save();
+  document.getElementById('modal-overlay').style.display='none';
+  if(window._trainFromDay){const _d=window._trainFromDay;window._trainFromDay=null;renderDay(_d);}
+  else{renderTraining();}
+}
+
+function delTrainLog(date, i){
+  if(!S.trainLogs||!S.trainLogs[date])return;
+  S.trainLogs[date].splice(i,1);
+  save(); renderTraining();
+}
+
+function drawTrainWeekChart(){
+  const canvas=document.getElementById('train-week-chart');if(!canvas)return;
+  const days=Array.from({length:7},(_,i)=>{const d=new Date(trainViewDate);d.setDate(d.getDate()-6+i);return d.toISOString().split('T')[0];});
+  const vals=days.map(d=>{const logs=getTrainLogs(d);return{min:logs.reduce((a,l)=>a+(l.minutes||0),0),count:logs.length};});
+  const W=canvas.parentElement.offsetWidth-24,H=120;
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');ctx.clearRect(0,0,W,H);
+  const maxV=Math.max(...vals.map(v=>v.min),60);
+  const bw=(W-16)/7-6;
+  vals.forEach((v,i)=>{
+    const x=8+i*((W-16)/7);
+    const h=v.min?(v.min/maxV)*(H-28):0;
+    const c=v.min>=60?'var(--green)':v.min>=30?'var(--amber)':'var(--blue)';
+    if(h>0){ctx.fillStyle=c;ctx.fillRect(x+2,H-16-h,bw,h);}
+    ctx.fillStyle='var(--ink3)';ctx.font='9px JetBrains Mono';ctx.textAlign='center';
+    ctx.fillText(days[i].slice(8),x+bw/2+2,H-3);
+    if(v.count>0){ctx.fillStyle='var(--ink)';ctx.fillText(v.count+'種',x+bw/2+2,H-19-h);}
+  });
+  ctx.textAlign='left';
 }
 
 // ══════════════════════════════
@@ -2220,13 +2162,14 @@ function initApp() {
   safeText('food-date-label', TDS);
   updateSidebar();
 renderDashboard();renderWeight();renderSleep();renderWater();
-renderTraining('june');renderFootwork();renderWorkout();renderMatch();
+renderTraining();renderFootwork();
 renderFood();renderCalendar();renderChecklist();renderReview();
 renderMotive();renderTactics();renderMemos();
 }
 
 // アプリ起動
 loadFromSupabase();
+
 
 
 
