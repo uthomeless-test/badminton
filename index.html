@@ -410,21 +410,23 @@ textarea{resize:vertical;}
   <nav class="sb-nav">
     <div class="sb-section">Overview</div>
     <div class="sb-item active" onclick="nav('dashboard')"><span class="sb-icon">⊞</span><span>ダッシュボード</span></div>
+    <div class="sb-item" onclick="nav('calendar')"><span class="sb-icon">◫</span><span>カレンダー</span></div>
+    <div class="sb-section">日別記録</div>
+    <div class="sb-item" onclick="navDay(TDS)"><span class="sb-icon">📅</span><span>今日の記録</span></div>
     <div class="sb-section">Body</div>
     <div class="sb-item" onclick="nav('weight')"><span class="sb-icon">⚖</span><span>体重 / BMI</span></div>
     <div class="sb-item" onclick="nav('sleep')"><span class="sb-icon">◑</span><span>睡眠ログ</span></div>
     <div class="sb-item" onclick="nav('water')"><span class="sb-icon">◎</span><span>水分摂取</span></div>
+    <div class="sb-item" onclick="nav('food')"><span class="sb-icon">◉</span><span>食事管理</span></div>
+    <div class="sb-item" onclick="nav('motive')"><span class="sb-icon">▲</span><span>モチベーション</span></div>
     <div class="sb-section">Training</div>
     <div class="sb-item" onclick="nav('training')"><span class="sb-icon">◈</span><span>トレーニング</span></div>
     <div class="sb-item" onclick="nav('footwork')"><span class="sb-icon">🦵</span><span>フットワーク強化</span></div>
     <div class="sb-item" onclick="nav('workout')"><span class="sb-icon">◐</span><span>筋トレログ</span></div>
     <div class="sb-item" onclick="nav('match')"><span class="sb-icon">◆</span><span>試合記録</span></div>
     <div class="sb-section">Management</div>
-    <div class="sb-item" onclick="nav('food')"><span class="sb-icon">◉</span><span>食事管理</span></div>
-    <div class="sb-item" onclick="nav('calendar')"><span class="sb-icon">◫</span><span>カレンダー</span></div>
     <div class="sb-item" onclick="nav('checklist')"><span class="sb-icon">☑</span><span>チェックリスト</span></div>
     <div class="sb-item" onclick="nav('review')"><span class="sb-icon">✦</span><span>週次振り返り</span></div>
-    <div class="sb-item" onclick="nav('motive')"><span class="sb-icon">▲</span><span>モチベーション</span></div>
     <div class="sb-item" onclick="nav('tactics')"><span class="sb-icon">◇</span><span>戦術メモ</span></div>
     <div class="sb-item" onclick="nav('memo')"><span class="sb-icon">✎</span><span>フリーメモ</span></div>
   </nav>
@@ -435,7 +437,7 @@ textarea{resize:vertical;}
 <div class="bot-nav">
   <button class="bn-item active" onclick="nav('dashboard')" id="bn-dashboard"><div class="bn-icon">⊞</div>Home</button>
   <button class="bn-item" onclick="nav('calendar')" id="bn-calendar"><div class="bn-icon">◫</div>カレンダー</button>
-  <button class="bn-item" onclick="nav('footwork')" id="bn-footwork"><div class="bn-icon">🦵</div>FW</button>
+  <button class="bn-item" onclick="navDay(TDS)" id="bn-day"><div class="bn-icon">📅</div>今日</button>
   <button class="bn-item" onclick="nav('training')" id="bn-training"><div class="bn-icon">◈</div>練習</button>
   <button class="bn-item" onclick="nav('checklist')" id="bn-checklist"><div class="bn-icon">☑</div>チェック</button>
 </div>
@@ -708,6 +710,22 @@ textarea{resize:vertical;}
   </div>
 </div>
 
+
+<!-- DAY DETAIL PAGE -->
+<div id="panel-day" class="panel">
+  <div class="ph">
+    <div class="ph-left">
+      <div class="ph-title" id="day-ph-title">— 日の記録</div>
+      <div class="ph-meta" id="day-ph-meta"></div>
+    </div>
+    <div class="ph-actions">
+      <button class="btn btn-ghost btn-sm" onclick="dayShift(-1)">◀ 前日</button>
+      <button class="btn btn-ghost btn-sm" onclick="nav('calendar')">📅 カレンダー</button>
+      <button class="btn btn-ghost btn-sm" onclick="dayShift(1)">翌日 ▶</button>
+    </div>
+  </div>
+  <div class="ca" id="day-content"></div>
+</div>
 <!-- CHECKLIST -->
 <div id="panel-checklist" class="panel">
   <div class="ph"><div class="ph-left"><div class="ph-title">チェックリスト</div></div><div class="ph-actions"><span style="font-size:12px;color:var(--ink3)">完了: <strong id="cl-done">0</strong>/24</span></div></div>
@@ -775,7 +793,9 @@ textarea{resize:vertical;}
 @keyframes loading-bar{0%{width:0%;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0%;margin-left:100%}}
 </style>
 
+
 <script>
+
 
 
 // ══════════════════════════════
@@ -881,7 +901,7 @@ function closeSidebar(){$('sidebar').classList.remove('open');$('sb-overlay').cl
 // ══════════════════════════════
 //  NAV
 // ══════════════════════════════
-const NAVMAP={dashboard:0,weight:1,sleep:2,water:3,training:4,footwork:5,workout:6,match:7,food:8,calendar:9,checklist:10,review:11,motive:12,tactics:13,memo:14};
+const NAVMAP={dashboard:0,calendar:1,weight:2,sleep:3,water:4,food:5,motive:6,training:7,footwork:8,workout:9,match:10,checklist:11,review:12,tactics:13,memo:14,day:15};
 const BN_IDS=['dashboard','calendar','footwork','training','checklist'];
 function nav(id){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
@@ -892,8 +912,304 @@ function nav(id){
   const bni=BN_IDS.indexOf(id);if(bni>=0)document.querySelectorAll('.bn-item')[bni].classList.add('active');
   safeText('mob-title', PAGE_TITLES[id]||id);
   closeSidebar();
-  const fn={dashboard:renderDashboard,weight:renderWeight,sleep:renderSleep,water:renderWater,training:()=>renderTraining('june'),footwork:renderFootwork,workout:renderWorkout,match:renderMatch,food:renderFood,calendar:renderCalendar,checklist:renderChecklist,review:renderReview,motive:renderMotive,tactics:renderTactics,memo:renderMemos};
+  const fn={dashboard:renderDashboard,calendar:renderCalendar,weight:renderWeight,sleep:renderSleep,water:renderWater,food:renderFood,motive:renderMotive,training:()=>renderTraining('june'),footwork:renderFootwork,workout:renderWorkout,match:renderMatch,checklist:renderChecklist,review:renderReview,tactics:renderTactics,memo:renderMemos};
   if(fn[id])fn[id]();
+}
+
+// ── 日付詳細ページへ遷移 ──────────────────────────────
+let currentDayDate = TDS;
+
+function navDay(ds){
+  currentDayDate = ds || TDS;
+  // すべてのパネルを非表示
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.bn-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-day').classList.add('active');
+  const bn=$('bn-day');if(bn)bn.classList.add('active');
+  safeText('mob-title', '日別記録');
+  closeSidebar();
+  renderDay(currentDayDate);
+}
+
+function dayShift(d){
+  const dt = new Date(currentDayDate);
+  dt.setDate(dt.getDate() + d);
+  navDay(dt.toISOString().split('T')[0]);
+}
+
+function renderDay(ds){
+  currentDayDate = ds;
+  const dobj = new Date(ds);
+  const dow = ['日','月','火','水','木','金','土'][dobj.getDay()];
+  const isToday = ds === TDS;
+
+  safeText('day-ph-title', ds.slice(5).replace('-','/') + '（' + dow + '）' + (isToday ? ' — 今日' : ''));
+  safeText('day-ph-meta', ds.slice(0,4) + '年');
+
+  const e       = S.calDays[ds] || {};
+  const mt      = S.motiveLog.find(m=>m.date===ds) || {};
+  const wEntry  = S.wLog.find(w=>w.d===ds);
+  const slEntry = S.sleepLog.find(s=>s.date===ds);
+  const wc      = S.waterLog[ds] || 0;
+  const fLogs   = (S.foodLogs && S.foodLogs[ds]) || [];
+  const wkLogs  = S.workoutLog.filter(l=>l.d===ds);
+  const mLogs   = S.matchLog.filter(l=>l.d===ds);
+  const diary   = e.diary || '';
+  const fwDone  = Object.keys(S.footworkLog[ds]||{}).filter(k=>!k.endsWith('_done')&&S.footworkLog[ds][k]).length;
+
+  const typeColor={training:'var(--blue)',badminton:'var(--green)',both:'var(--amber)',rest:'var(--ink4)'}[e.type]||'var(--border)';
+  const typeLabel={training:'🏋 トレーニング',badminton:'🏸 バドミントン',both:'両方',rest:'💤 休養'}[e.type]||'未設定';
+
+  const el = $('day-content');
+  if(!el) return;
+
+  el.innerHTML = `
+    <!-- 練習ステータス -->
+    <div class="card mb16">
+      <div class="card-hd"><div class="card-title">練習ステータス</div></div>
+      <div style="padding:12px 14px">
+        <div class="toggle-group mb12">
+          <button class="tgl ${e.type==='training'?'on-blue':''}" onclick="setDayType('${ds}','training')">🏋 トレーニング</button>
+          <button class="tgl ${e.type==='badminton'?'on':''}" onclick="setDayType('${ds}','badminton')">🏸 バドミントン</button>
+          <button class="tgl ${e.type==='both'?'on-amber':''}" onclick="setDayType('${ds}','both')">両方</button>
+          <button class="tgl ${e.type==='rest'?'on-red':''}" onclick="setDayType('${ds}','rest')">💤 休養</button>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <div class="sec-title" style="margin-bottom:0;line-height:2">体調：</div>
+          <div class="rating-row">${['😫','😕','😐','🙂','😄'].map((emoji,i)=>`<button class="rating-btn ${(e.condition||0)===i+1?'on':''}" onclick="setDayCondition('${ds}',${i+1})">${emoji}</button>`).join('')}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="g2 mb16">
+      <!-- 体重 -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">⚖ 体重</div>
+          <button class="btn btn-ghost btn-sm" onclick="nav('weight')">履歴 →</button>
+        </div>
+        <div style="padding:12px 14px">
+          ${wEntry ? `<div style="font-family:'DM Serif Display',serif;font-size:36px;line-height:1;margin-bottom:8px">${wEntry.w}<small style="font-size:14px">kg</small></div>` : ''}
+          <div style="display:flex;gap:7px;align-items:center">
+            <input type="number" id="day-w-input" step="0.1" min="50" max="150" placeholder="例: 92.5" value="${wEntry?wEntry.w:''}" style="flex:1">
+            <button class="btn btn-primary btn-sm" onclick="saveDayWeight('${ds}')">保存</button>
+            ${wEntry?`<button class="btn btn-danger btn-sm" onclick="delDayWeight('${ds}')">削除</button>`:''}
+          </div>
+        </div>
+      </div>
+
+      <!-- モチベーション -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">▲ モチベーション</div>
+          <button class="btn btn-ghost btn-sm" onclick="nav('motive')">履歴 →</button>
+        </div>
+        <div style="padding:12px 14px">
+          ${mt.val ? `<div style="font-family:'DM Serif Display',serif;font-size:36px;color:${mt.val>=7?'var(--green)':mt.val>=4?'var(--amber)':'var(--red)'};line-height:1;margin-bottom:8px">${mt.val}<small style="font-size:14px">/10</small></div>` : ''}
+          <div class="motive-row mb8">
+            ${Array.from({length:10},(_,i)=>{const v=i+1;const sel=mt.val===v;const c=v>=8?'on-green':v>=5?'on-amber':'on-red';return`<button class="mn ${sel?c:''}" onclick="setDayMotive('${ds}',${v})">${v}</button>`;}).join('')}
+          </div>
+          <input type="text" id="day-motive-comment" placeholder="一言コメント..." value="${mt.comment||''}" oninput="setDayMotiveComment('${ds}',this.value)">
+        </div>
+      </div>
+    </div>
+
+    <div class="g2 mb16">
+      <!-- 睡眠 -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">◑ 睡眠</div>
+          <button class="btn btn-ghost btn-sm" onclick="nav('sleep')">履歴 →</button>
+        </div>
+        <div style="padding:12px 14px">
+          ${slEntry ? `<div style="font-family:'DM Serif Display',serif;font-size:32px;line-height:1;margin-bottom:8px">${slEntry.hours}<small style="font-size:14px">h</small> <span style="font-size:13px;color:var(--ink3)">${slEntry.bed}→${slEntry.wake}</span></div>` : ''}
+          <div class="g2" style="gap:8px;margin-bottom:8px">
+            <div><div class="form-label">就寝</div><input type="time" id="day-sl-bed" value="${slEntry?slEntry.bed:'23:00'}"></div>
+            <div><div class="form-label">起床</div><input type="time" id="day-sl-wake" value="${slEntry?slEntry.wake:'07:00'}"></div>
+          </div>
+          <div style="margin-bottom:8px">
+            <div class="form-label">質</div>
+            <div class="rating-row" id="day-sl-stars">${[1,2,3,4,5].map(v=>`<button class="rating-btn ${(slEntry&&slEntry.quality>=v)?'on':''}" onclick="setDaySleepQ('${ds}',${v},'${ds}')">${['😫','😕','😐','🙂','😄'][v-1]}</button>`).join('')}</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveDaySleep('${ds}')">保存</button>
+        </div>
+      </div>
+
+      <!-- 水分 -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">◎ 水分</div>
+          <button class="btn btn-ghost btn-sm" onclick="nav('water')">履歴 →</button>
+        </div>
+        <div style="padding:12px 14px">
+          <div style="font-family:'DM Serif Display',serif;font-size:32px;color:var(--blue);line-height:1;margin-bottom:10px">${wc}<small style="font-size:14px">杯</small> <small style="font-size:12px;color:var(--ink3)">/ 8杯</small></div>
+          <div class="water-cups" id="day-water-cups">
+            ${Array.from({length:8},(_,i)=>`<div class="water-cup ${i<wc?'filled':''}" onclick="setDayWater('${ds}',${i})">💧</div>`).join('')}
+          </div>
+          <div style="margin-top:8px;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.min(100,wc/8*100)}%;background:var(--blue);border-radius:3px"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 食事 -->
+    <div class="card mb16">
+      <div class="card-hd">
+        <div class="card-title">◉ 食事</div>
+        <div style="display:flex;gap:6px">
+          <span style="font-size:11px;color:var(--ink3);align-self:center">${fLogs.reduce((a,l)=>a+l.cal,0)||0}kcal</span>
+          <button class="btn btn-primary btn-sm" onclick="openFoodLog();window._foodDate='${ds}'">＋ 追加</button>
+          <button class="btn btn-ghost btn-sm" onclick="foodViewDate='${ds}';nav('food')">詳細 →</button>
+        </div>
+      </div>
+      ${fLogs.length ? fLogs.map((l,i)=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 14px;border-bottom:1px solid var(--bg2);font-size:12px">
+          <span style="font-size:10px;padding:1px 6px;border-radius:2px;background:${(MEAL_COLORS||{})[l.meal]||'var(--bg2)'}18;color:${(MEAL_COLORS||{})[l.meal]||'var(--ink3)'};font-weight:700;flex-shrink:0">${l.meal}</span>
+          <span style="flex:1">${l.name}</span>
+          <span style="font-family:'JetBrains Mono',monospace;color:var(--ink3)">${l.cal}kcal</span>
+          <button class="btn btn-danger btn-sm" onclick="delFoodLog('${ds}',${i});renderDay('${ds}')">✕</button>
+        </div>`).join('')
+      : '<div style="padding:9px 14px;font-size:12px;color:var(--ink4)">未記録</div>'}
+    </div>
+
+    <!-- 筋トレ -->
+    <div class="card mb16">
+      <div class="card-hd">
+        <div class="card-title">◐ 筋トレ</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-primary btn-sm" onclick="openModal('workout');window._wkDate='${ds}'">＋ 記録</button>
+          <button class="btn btn-ghost btn-sm" onclick="nav('workout')">履歴 →</button>
+        </div>
+      </div>
+      ${wkLogs.length ? wkLogs.map((l,i)=>{
+        const gi=S.workoutLog.indexOf(l);
+        const ic=l.intensity==='HIGH'?'var(--red)':l.intensity==='MID'?'var(--amber)':'var(--green)';
+        return`<div style="display:flex;align-items:center;gap:8px;padding:7px 14px;border-bottom:1px solid var(--bg2);font-size:12px">
+          <span style="font-weight:700;flex:1">${l.ex}</span>
+          <span style="color:var(--ink3)">${l.sets}セット×${l.reps}回</span>
+          <span style="color:${ic};font-size:10px;font-weight:700">${l.intensity}</span>
+          <button class="btn btn-danger btn-sm" onclick="delWorkout(${gi});renderDay('${ds}')">✕</button>
+        </div>`;
+      }).join('')
+      : '<div style="padding:9px 14px;font-size:12px;color:var(--ink4)">未記録</div>'}
+    </div>
+
+    <!-- 試合 -->
+    <div class="card mb16">
+      <div class="card-hd">
+        <div class="card-title">◆ 試合</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-primary btn-sm" onclick="openModal('match');window._matchDate='${ds}'">＋ 記録</button>
+          <button class="btn btn-ghost btn-sm" onclick="nav('match')">履歴 →</button>
+        </div>
+      </div>
+      ${mLogs.length ? mLogs.map((l,i)=>{
+        const gi=S.matchLog.indexOf(l);
+        return`<div style="display:flex;align-items:center;gap:8px;padding:7px 14px;border-bottom:1px solid var(--bg2);font-size:12px">
+          <span class="win-badge ${l.result}">${l.result==='win'?'勝利':'敗戦'}</span>
+          <span style="flex:1">${l.opp||'—'}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-weight:700">${l.score||'—'}</span>
+          <button class="btn btn-danger btn-sm" onclick="delMatch(${gi});renderDay('${ds}')">✕</button>
+        </div>`;
+      }).join('')
+      : '<div style="padding:9px 14px;font-size:12px;color:var(--ink4)">未記録</div>'}
+    </div>
+
+    <!-- 日記 -->
+    <div class="card mb16">
+      <div class="card-hd"><div class="card-title">📝 日記</div>
+        <span class="diary-saved ${diary?'show':''}" id="day-diary-saved">✓ 保存済み</span>
+      </div>
+      <div style="padding:12px 14px">
+        <div class="diary-hint">💡 今日の練習・体の調子・食事の反省・次回への一言</div>
+        <textarea class="diary-area" id="day-diary-input"
+          placeholder="${ds}の日記をここに自由に書いてください..."
+          oninput="saveDayDiary('${ds}',this.value)"
+        >${diary}</textarea>
+        <div class="diary-footer">
+          <span class="diary-count" id="day-diary-count">${diary.length}文字</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- フットワーク -->
+    <div class="card mb16">
+      <div class="card-hd">
+        <div class="card-title">🦵 フットワーク</div>
+        <button class="btn btn-ghost btn-sm" onclick="nav('footwork')">メニュー選択 →</button>
+      </div>
+      <div style="padding:12px 14px;font-size:12px;color:${fwDone>0?'var(--green)':'var(--ink4)'}">
+        ${fwDone>0 ? `✓ ${fwDone}種目選択済み` : '未選択 — フットワーク強化ページからメニューを選んでください'}
+      </div>
+    </div>
+  `;
+
+  // 睡眠の星評価状態を保持
+  window._daySleepQ = slEntry ? slEntry.quality : 3;
+}
+
+// ── Day page helpers ──────────────────────────────────
+function setDayType(ds, type){
+  if(!S.calDays[ds])S.calDays[ds]={};
+  S.calDays[ds].type=type;
+  S.calDays[ds].trained=(type!=='rest');
+  save(); renderDay(ds);
+}
+function setDayCondition(ds, v){
+  if(!S.calDays[ds])S.calDays[ds]={};
+  S.calDays[ds].condition=v;
+  save(); renderDay(ds);
+}
+function setDayMotive(ds, v){
+  const ex=S.motiveLog.find(m=>m.date===ds);
+  if(ex){ex.val=v;}
+  else{S.motiveLog.push({date:ds,val:v,comment:''});S.motiveLog.sort((a,b)=>a.date.localeCompare(b.date));}
+  save(); renderDay(ds);
+}
+function setDayMotiveComment(ds, val){
+  const ex=S.motiveLog.find(m=>m.date===ds);
+  if(ex){ex.comment=val;save();}
+}
+function setDaySleepQ(ds, v){
+  window._daySleepQ=v;
+  document.querySelectorAll('#day-sl-stars .rating-btn').forEach((b,i)=>b.classList.toggle('on',i<v));
+}
+function saveDaySleep(ds){
+  const bed=$('day-sl-bed').value;
+  const wake=$('day-sl-wake').value;
+  if(!bed||!wake)return;
+  const[bh,bm]=bed.split(':').map(Number),[wh,wm]=wake.split(':').map(Number);
+  let hours=(wh*60+wm-(bh*60+bm));if(hours<0)hours+=1440;hours=+(hours/60).toFixed(1);
+  S.sleepLog=S.sleepLog.filter(l=>l.date!==ds);
+  S.sleepLog.push({date:ds,bed,wake,hours,quality:window._daySleepQ||3,memo:''});
+  S.sleepLog.sort((a,b)=>a.date.localeCompare(b.date));
+  save(); renderDay(ds);
+}
+function setDayWater(ds, i){
+  const cur=S.waterLog[ds]||0;
+  S.waterLog[ds]=i<cur?i:i+1;
+  save(); renderDay(ds);
+}
+function saveDayWeight(ds){
+  const w=parseFloat($('day-w-input').value);
+  if(isNaN(w))return;
+  S.wLog=S.wLog.filter(e=>e.d!==ds);
+  S.wLog.push({d:ds,w,f:null,m:''});
+  S.wLog.sort((a,b)=>a.d.localeCompare(b.d));
+  save(); updateSidebar(); renderDay(ds);
+}
+function delDayWeight(ds){
+  S.wLog=S.wLog.filter(e=>e.d!==ds);
+  save(); updateSidebar(); renderDay(ds);
+}
+let _dayDiaryTimer=null;
+function saveDayDiary(ds, val){
+  if(!S.calDays[ds])S.calDays[ds]={};
+  S.calDays[ds].diary=val;
+  save();
+  const cc=$('day-diary-count');if(cc)cc.textContent=val.length+'文字';
+  const si=$('day-diary-saved');
+  if(si){si.classList.remove('show');clearTimeout(_dayDiaryTimer);_dayDiaryTimer=setTimeout(()=>si.classList.add('show'),800);}
 }
 
 function updateSidebar(){
@@ -1025,7 +1341,7 @@ function openModal(type){
   }else if(type==='workout'){
     $('modal-title').textContent='筋トレを記録';
     $('modal-body').innerHTML=`
-      <div class="form-row"><label class="form-label">日付</label><input type="date" id="wk-date" value="${TDS}"></div>
+      <div class="form-row"><label class="form-label">日付</label><input type="date" id="wk-date" value="${window._wkDate||TDS}"></div>
       <div class="form-row"><label class="form-label">種目</label><select id="wk-ex">${['スクワット','ランジ','カーフレイズ','プランク','腹筋','バーピー','サイドステップ','インターバルラン','タバタ','その他'].map(e=>`<option>${e}</option>`).join('')}</select></div>
       <div class="form-row"><label class="form-label">セット数</label><input type="number" id="wk-sets" min="1" max="20" value="3"></div>
       <div class="form-row"><label class="form-label">回数</label><input type="number" id="wk-reps" min="1" value="15"></div>
@@ -1036,7 +1352,7 @@ function openModal(type){
     $('modal-title').textContent='試合を記録';
     window._matchResult='win';
     $('modal-body').innerHTML=`
-      <div class="form-row"><label class="form-label">日付</label><input type="date" id="mt-date" value="${TDS}"></div>
+      <div class="form-row"><label class="form-label">日付</label><input type="date" id="mt-date" value="${window._matchDate||TDS}"></div>
       <div class="form-row"><label class="form-label">相手</label><input type="text" id="mt-opp" placeholder="相手の特徴など"></div>
       <div class="form-row"><label class="form-label">スコア</label><input type="text" id="mt-score" placeholder="21-15"></div>
       <div class="form-row"><label class="form-label">結果</label>
@@ -1296,7 +1612,8 @@ function toggleFWDone(menuId){
 // ══════════════════════════════
 function saveWorkout(){
   const d=$('wk-date').value,ex=$('wk-ex').value,sets=+$('wk-sets').value,reps=+$('wk-reps').value,intensity=$('wk-int').value,memo=$('wk-memo').value;
-  if(!d)return;S.workoutLog.push({d,ex,sets,reps,intensity,memo});S.workoutLog.sort((a,b)=>a.d.localeCompare(b.d));save();closeModal();renderWorkout();
+  if(!d)return;S.workoutLog.push({d,ex,sets,reps,intensity,memo});S.workoutLog.sort((a,b)=>a.d.localeCompare(b.d));save();closeModal();
+  if(window._wkDate){const _d=window._wkDate;window._wkDate=null;renderDay(_d);}else{renderWorkout();}
 }
 function delWorkout(i){S.workoutLog.splice(i,1);save();renderWorkout();}
 function renderWorkout(){
@@ -1309,7 +1626,8 @@ function renderWorkout(){
 }
 function saveMatch(){
   const d=$('mt-date').value,opp=$('mt-opp').value,score=$('mt-score').value,result=window._matchResult||'lose',note=$('mt-note').value;
-  if(!d)return;S.matchLog.push({d,opp,score,result,note});S.matchLog.sort((a,b)=>a.d.localeCompare(b.d));save();closeModal();renderMatch();
+  if(!d)return;S.matchLog.push({d,opp,score,result,note});S.matchLog.sort((a,b)=>a.d.localeCompare(b.d));save();closeModal();
+  if(window._matchDate){const _d=window._matchDate;window._matchDate=null;renderDay(_d);}else{renderMatch();}
 }
 function delMatch(i){S.matchLog.splice(i,1);save();renderMatch();}
 function renderMatch(){
@@ -1430,6 +1748,7 @@ function renderFood(){
 }
 
 function openFoodLog(defaultMeal){
+  if(window._foodDate){window._dayAfterFood=window._foodDate;foodViewDate=window._foodDate;window._foodDate=null;}
   $('modal-title').textContent='食事を記録';
   const presetHTML=FOOD_PRESETS.map((p,i)=>`<button onclick="selectPreset(${i})" style="padding:5px 9px;background:var(--bg);border:1px solid var(--border);border-radius:3px;font-size:11px;cursor:pointer;text-align:left;transition:all .15s" id="preset-${i}">${p.name}<span style="color:var(--ink3);margin-left:4px">${p.cal}kcal</span></button>`).join('');
   $('modal-body').innerHTML=`
@@ -1492,7 +1811,8 @@ function saveFoodLog(){
     memo:$('fi-memo').value||'',
     time:new Date().toTimeString().slice(0,5)
   });
-  save();closeModal();renderFood();
+  save();closeModal();
+  if(window._dayAfterFood){const _d=window._dayAfterFood;window._dayAfterFood=null;renderDay(_d);}else{renderFood();}
 }
 function delFoodLog(date,i){
   if(!S.foodLogs||!S.foodLogs[date])return;
@@ -1571,9 +1891,7 @@ function renderCalendar(){
 function calPrev(){let{y,m}=S.calMonth;m--;if(m<0){m=11;y--;}S.calMonth={y,m};save();renderCalendar();}
 function calNext(){let{y,m}=S.calMonth;m++;if(m>11){m=0;y++;}S.calMonth={y,m};save();renderCalendar();}
 function selectCalDay(ds){
-  calSelected=ds;
-  if(window.innerWidth<=768){openCalModal(ds);}
-  else{renderCalDetail(ds);renderCalendar();}
+  navDay(ds);
 }
 function renderCalDetail(ds){
   const e=S.calDays[ds]||{};
@@ -1909,6 +2227,7 @@ renderMotive();renderTactics();renderMemos();
 
 // アプリ起動
 loadFromSupabase();
+
 
 
 </script>
