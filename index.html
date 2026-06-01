@@ -787,7 +787,11 @@ textarea{resize:vertical;}
 
 
 
+
+
 <script>
+
+
 
 
 // ══════════════════════════════
@@ -1064,47 +1068,16 @@ function renderDay(ds){
       : '<div style="padding:9px 14px;font-size:12px;color:var(--ink4)">未記録</div>'}
     </div>
 
-    <!-- 筋トレ -->
+    <!-- 練習 -->
     <div class="card mb16">
       <div class="card-hd">
-        <div class="card-title">◐ 筋トレ</div>
+        <div class="card-title">◈ 練習</div>
         <div style="display:flex;gap:6px">
-          <button class="btn btn-primary btn-sm" onclick="openModal('workout');window._wkDate='${ds}'">＋ 記録</button>
-          <button class="btn btn-ghost btn-sm" onclick="nav('workout')">履歴 →</button>
+          <button class="btn btn-primary btn-sm" onclick="trainViewDate='${ds}';window._trainFromDay='${ds}';openTrainLog()">＋ 記録</button>
+          <button class="btn btn-ghost btn-sm" onclick="trainViewDate='${ds}';nav('training')">詳細 →</button>
         </div>
       </div>
-      ${wkLogs.length ? wkLogs.map((l,i)=>{
-        const gi=S.workoutLog.indexOf(l);
-        const ic=l.intensity==='HIGH'?'var(--red)':l.intensity==='MID'?'var(--amber)':'var(--green)';
-        return`<div style="display:flex;align-items:center;gap:8px;padding:7px 14px;border-bottom:1px solid var(--bg2);font-size:12px">
-          <span style="font-weight:700;flex:1">${l.ex}</span>
-          <span style="color:var(--ink3)">${l.sets}セット×${l.reps}回</span>
-          <span style="color:${ic};font-size:10px;font-weight:700">${l.intensity}</span>
-          <button class="btn btn-danger btn-sm" onclick="delWorkout(${gi});renderDay('${ds}')">✕</button>
-        </div>`;
-      }).join('')
-      : '<div style="padding:9px 14px;font-size:12px;color:var(--ink4)">未記録</div>'}
-    </div>
-
-    <!-- 試合 -->
-    <div class="card mb16">
-      <div class="card-hd">
-        <div class="card-title">◆ 試合</div>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-primary btn-sm" onclick="openModal('match');window._matchDate='${ds}'">＋ 記録</button>
-          <button class="btn btn-ghost btn-sm" onclick="nav('match')">履歴 →</button>
-        </div>
-      </div>
-      ${mLogs.length ? mLogs.map((l,i)=>{
-        const gi=S.matchLog.indexOf(l);
-        return`<div style="display:flex;align-items:center;gap:8px;padding:7px 14px;border-bottom:1px solid var(--bg2);font-size:12px">
-          <span class="win-badge ${l.result}">${l.result==='win'?'勝利':'敗戦'}</span>
-          <span style="flex:1">${l.opp||'—'}</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-weight:700">${l.score||'—'}</span>
-          <button class="btn btn-danger btn-sm" onclick="delMatch(${gi});renderDay('${ds}')">✕</button>
-        </div>`;
-      }).join('')
-      : '<div style="padding:9px 14px;font-size:12px;color:var(--ink4)">未記録</div>'}
+      ${(()=>{const tl=(S.trainLogs&&S.trainLogs[ds])||[];return tl.length?tl.map((l,i)=>{const ic=l.intensity==='HIGH'?'var(--red)':l.intensity==='MID'?'var(--amber)':'var(--green)';return`<div style="display:flex;align-items:center;gap:8px;padding:7px 14px;border-bottom:1px solid var(--bg2);font-size:12px"><span style="font-size:10px;padding:1px 6px;border-radius:2px;background:${(TRAIN_COLORS[l.time]||'var(--bg2)')}18;color:${TRAIN_COLORS[l.time]||'var(--ink3)'};font-weight:700;flex-shrink:0">${l.time}</span><span style="font-weight:700;flex:1">${l.name}</span>${l.minutes?`<span style="color:var(--ink3);font-family:'JetBrains Mono',monospace">${l.minutes}分</span>`:''}<span style="color:${ic};font-size:10px;font-weight:700;border:1px solid ${ic};padding:1px 4px;border-radius:2px">${l.intensity}</span><button class="btn btn-danger btn-sm" onclick="S.trainLogs[ds].splice(${i},1);save();renderDay(ds)">✕</button></div>`;}).join(''):`<div style="padding:9px 14px;font-size:12px;color:var(--ink4)">未記録</div>`;})()}
     </div>
 
     <!-- 日記 -->
@@ -1605,6 +1578,141 @@ function drawTrainWeekChart(){
     if(v.count>0){ctx.fillStyle='var(--ink)';ctx.fillText(v.count+'種',x+bw/2+2,H-19-h);}
   });
   ctx.textAlign='left';
+}
+
+
+// ══════════════════════════════
+//  FOOTWORK TRAINING
+// ══════════════════════════════
+const FW_CATEGORIES=[
+  {
+    id:'agility',name:'素早い切り返し',icon:'⚡',color:'var(--red)',
+    desc:'コート内での急停止・方向転換能力。足がもつれる原因の1位。',
+    menus:[
+      {id:'fw1',name:'ラダードリル（2ステップ）',sets:'3セット × 往復',level:'初級',detail:'ラダーの各マスに両足を交互に入れる。膝を上げてテンポよく。ラダーがなければ床にテープで代用。',point:'膝を高く上げ体幹をまっすぐ保つ'},
+      {id:'fw2',name:'Tドリル（T字ダッシュ）',sets:'5本 × 2セット',level:'中級',detail:'中央→前→左→右→前→後ろのTコースをダッシュ。8m×4m程度を想定。',point:'足を交差させず常に体を正面に向ける'},
+      {id:'fw3',name:'バウンディング（跳躍系）',sets:'20m × 4本',level:'中級',detail:'大きく踏み込みながら前進するジャンプ走。接地時間を短く。',point:'腕を大きく振り推進力を高める'},
+      {id:'fw4',name:'コーンジグザグドリル',sets:'4本 × 3セット',level:'中級',detail:'5個のコーンを1m間隔で並べジグザグに通過。速く・体幹を安定させて。',point:'コーンの外側で踏ん張りすぐ次へ向く'},
+    ]
+  },
+  {
+    id:'split',name:'スプリットステップ',icon:'🦵',color:'var(--blue)',
+    desc:'相手が打つ瞬間に軽くジャンプして着地し次の動きに備える基本動作。',
+    menus:[
+      {id:'fw5',name:'スプリットステップ連続練習',sets:'30回 × 3セット',level:'初級',detail:'両足を肩幅に開き軽くジャンプ→着地を繰り返す。着地と同時に次方向へ重心を傾ける。',point:'つま先着地・膝を曲げてばね状態をキープ'},
+      {id:'fw6',name:'スプリット→サイドステップ',sets:'10往復 × 3セット',level:'中級',detail:'スプリット着地後すぐにサイドステップで3歩移動。左右交互に。',point:'着地後0.1秒でステップ開始のイメージ'},
+      {id:'fw7',name:'動画見ながらスプリット模倣',sets:'1ゲーム分',level:'初級',detail:'試合動画を見ながら相手が打つ瞬間に実際にスプリットを踏む。反応練習。',point:'「見てから動く」から「予測して動く」へ'},
+    ]
+  },
+  {
+    id:'lateral',name:'サイドの速い動き',icon:'↔️',color:'var(--green)',
+    desc:'ネット前・サイドへの素早い移動。バドでは横の動きが最も多い。',
+    menus:[
+      {id:'fw8',name:'シャトルラン（サイドステップ）',sets:'10往復 × 3セット',level:'初級',detail:'コート幅6mをサイドステップで往復。足を交差させずスライドで。',point:'腰を落として低重心を保つ'},
+      {id:'fw9',name:'クロスオーバーステップ',sets:'10往復 × 3セット',level:'中級',detail:'後ろ足を前足の前でクロスさせ大きく移動する。',point:'体が正面を向いたままクロス'},
+      {id:'fw10',name:'ランジ→即リターン',sets:'12回 × 3セット',level:'初級',detail:'サイドに大きくランジ→すぐ元の位置に戻る。',point:'踏み込んだ足のかかとで蹴り返す'},
+      {id:'fw11',name:'サイドボックスジャンプ',sets:'20回 × 3セット',level:'上級',detail:'低めのボックス横からサイドジャンプで飛び乗り→反対へ飛び降りる。',point:'両足同時着地・膝を曲げて吸収'},
+    ]
+  },
+  {
+    id:'forward',name:'前後の動き（ネット前）',icon:'⬆️',color:'var(--amber)',
+    desc:'ネット前への突き込みと後方への素早い戻り。',
+    menus:[
+      {id:'fw12',name:'ネット前チャイニーズステップ',sets:'20回 × 3セット',level:'中級',detail:'前方に右足→左足と素早く踏み込み→バックステップで戻る。',point:'前に出た後のバックステップを素早く'},
+      {id:'fw13',name:'前後ダッシュ（5m折り返し）',sets:'10本 × 3セット',level:'初級',detail:'ベースライン←→ネット前5mをダッシュ＆折り返し。',point:'折り返しは足の外側でブレーキ→すぐ蹴り出し'},
+      {id:'fw14',name:'バックランジ交互',sets:'12回 × 3セット',level:'初級',detail:'後方へランジを踏み元に戻る。後退時の体幹安定を鍛える。',point:'上体が前に倒れないよう視線は正面'},
+    ]
+  },
+  {
+    id:'endurance',name:'フットワーク持久力',icon:'🔥',color:'var(--purple)',
+    desc:'試合終盤でも足が動き続ける能力。疲れると足がもつれる原因。',
+    menus:[
+      {id:'fw15',name:'6点フットワーク（コート全体）',sets:'1分 × 5セット（レスト1分）',level:'上級',detail:'コート6カ所をランダム順で全力移動。',point:'最後の1分でも初動スピードを落とさない'},
+      {id:'fw16',name:'インターバルサイドステップ',sets:'30秒全力+30秒休憩 × 8',level:'上級',detail:'30秒間ひたすらサイドステップ。タバタ式の応用。',point:'30秒間フォームを崩さない'},
+      {id:'fw17',name:'連続スクワットジャンプ',sets:'15回 × 4セット',level:'中級',detail:'深くしゃがんで全力ジャンプ→着地後すぐ次へ。',point:'着地時に膝が内側に入らないよう'},
+      {id:'fw18',name:'ロングランジウォーク',sets:'20m × 3往復',level:'初級',detail:'広いランジで歩き続ける。深く踏み込んで太もも〜臀部を鍛える。',point:'後ろの膝が床に付くくらい深く'},
+    ]
+  },
+  {
+    id:'balance',name:'バランス・体幹安定',icon:'⚖',color:'var(--teal)',
+    desc:'1本足での安定・体幹がないとショット精度が落ちる。全動作の基盤。',
+    menus:[
+      {id:'fw19',name:'シングルレッグデッドリフト',sets:'10回 × 3セット（左右）',level:'中級',detail:'片足立ちで上体を前傾→戻る。股関節の安定と体幹を強化。',point:'軸足の膝を軽く曲げ体が傾かないよう'},
+      {id:'fw20',name:'片足立ち（目を閉じる）',sets:'30秒 × 4セット（左右）',level:'初級',detail:'片足立ちで30秒キープ。慣れたら目を閉じる・腕を動かす。',point:'グラつきを体幹で吸収するイメージ'},
+      {id:'fw21',name:'プランクウォーク',sets:'10往復 × 3セット',level:'中級',detail:'プランク姿勢から手を交互に出して前進・後退。',point:'腰が左右に振れないよう腹圧をかける'},
+      {id:'fw22',name:'側臥位アブダクション',sets:'20回 × 3セット（左右）',level:'初級',detail:'横向きに寝て上の足を天井方向に上げる。中臀筋を強化。',point:'つま先を少し下に向けると効く'},
+    ]
+  }
+];
+
+function renderFootwork(){
+  const el=$('fw-content');
+  if(!el)return;
+  el.innerHTML=FW_CATEGORIES.map(cat=>`
+    <div class="card mb16">
+      <div class="card-hd" style="border-left:3px solid ${cat.color}">
+        <div style="display:flex;align-items:center;gap:8px;min-width:0">
+          <span style="font-size:18px;flex-shrink:0">${cat.icon}</span>
+          <div style="min-width:0">
+            <div class="card-title" style="color:${cat.color}">${cat.name}</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:1px">${cat.desc}</div>
+          </div>
+        </div>
+      </div>
+      <div class="fw-grid">
+        ${cat.menus.map(menu=>{
+          const sel=!!(S.footworkLog[TDS]&&S.footworkLog[TDS][menu.id]);
+          const lc=menu.level==='初級'?'var(--green)':menu.level==='中級'?'var(--amber)':'var(--red)';
+          return`<div class="fw-card ${sel?'selected':''}" onclick="toggleFW('${menu.id}','${cat.id}')">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
+              <div class="fw-card-name">${menu.name}</div>
+              <span style="font-size:9px;color:${lc};border:1px solid ${lc};padding:1px 5px;border-radius:2px;font-weight:700;flex-shrink:0;white-space:nowrap">${menu.level}</span>
+            </div>
+            <div class="fw-card-sets">${menu.sets}</div>
+            <div class="fw-card-detail">${menu.detail}</div>
+            <div class="fw-card-point" style="color:${cat.color}">💡 ${menu.point}</div>
+            <div class="fw-card-action">${sel?'✓ 選択中（タップで解除）':'タップで選択'}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `).join('')+`
+  <div class="card" style="border:2px solid var(--red)">
+    <div class="card-hd" style="background:var(--red-light)">
+      <div class="card-title" style="color:var(--red)">今日の選択メニュー</div>
+      <button class="btn btn-danger btn-sm" onclick="clearFW()">リセット</button>
+    </div>
+    <div style="padding:13px" id="fw-plan-body"></div>
+  </div>`;
+  renderFWPlan();
+}
+
+function toggleFW(menuId,catId){
+  if(!S.footworkLog[TDS])S.footworkLog[TDS]={};
+  S.footworkLog[TDS][menuId]=!S.footworkLog[TDS][menuId];
+  save();renderFootwork();
+}
+function clearFW(){if(S.footworkLog[TDS])delete S.footworkLog[TDS];save();renderFootwork();}
+function renderFWPlan(){
+  const el=$('fw-plan-body');if(!el)return;
+  const todayLog=S.footworkLog[TDS]||{};
+  const selected=[];
+  FW_CATEGORIES.forEach(cat=>cat.menus.forEach(m=>{if(todayLog[m.id])selected.push({...m,catName:cat.name,catColor:cat.color});}));
+  if(!selected.length){el.innerHTML='<div style="color:var(--ink4);font-size:12px">上のカードをタップして今日の練習を選択</div>';return;}
+  const doneCount=selected.filter(m=>todayLog[m.id+'_done']).length;
+  el.innerHTML=`<div style="font-size:12px;color:var(--ink3);margin-bottom:9px">${selected.length}種目選択 — 完了: <strong style="color:var(--green)">${doneCount}/${selected.length}</strong></div>`+
+  selected.map(m=>`<div class="fw-plan-item">
+    <div class="fw-done-btn ${(todayLog[m.id+'_done'])?'done':''}" onclick="toggleFWDone('${m.id}')">${todayLog[m.id+'_done']?'✓':''}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-weight:700;font-size:12px;${todayLog[m.id+'_done']?'text-decoration:line-through;color:var(--ink3)':''}">${m.name}</div>
+      <div style="font-size:11px;color:var(--ink3)">${m.catName} · ${m.sets}</div>
+    </div>
+  </div>`).join('');
+}
+function toggleFWDone(menuId){
+  if(!S.footworkLog[TDS])S.footworkLog[TDS]={};
+  S.footworkLog[TDS][menuId+'_done']=!S.footworkLog[TDS][menuId+'_done'];
+  save();renderFWPlan();
 }
 
 // ══════════════════════════════
@@ -2192,6 +2300,8 @@ renderMotive();renderTactics();renderMemos();
 
 // アプリ起動
 loadFromSupabase();
+
+
 
 
 </script>
