@@ -785,11 +785,9 @@ textarea{resize:vertical;}
 
 
 
+
+
 <script>
-
-
-
-
 
 
 // ══════════════════════════════
@@ -900,10 +898,10 @@ const NAVMAP={dashboard:0,calendar:1,weight:2,sleep:3,water:4,food:5,motive:6,tr
 const BN_IDS=['dashboard','calendar','footwork','training','checklist'];
 function nav(id){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(n=>n.classList.remove('active'));
   document.querySelectorAll('.bn-item').forEach(n=>n.classList.remove('active'));
   $('panel-'+id).classList.add('active');
-  const ni=document.querySelectorAll('.nav-item')[NAVMAP[id]];if(ni)ni.classList.add('active');
+  const ni=document.querySelectorAll('.sb-item')[NAVMAP[id]];if(ni)ni.classList.add('active');
   const bni=BN_IDS.indexOf(id);if(bni>=0)document.querySelectorAll('.bn-item')[bni].classList.add('active');
   safeText('mob-title', PAGE_TITLES[id]||id);
   closeSidebar();
@@ -1239,7 +1237,7 @@ function renderDashboard(){
   while(true){const s=c2.toISOString().split('T')[0];if(S.calDays[s]&&S.calDays[s].trained){str++;c2.setDate(c2.getDate()-1);}else break;}
   $('kpi-str').textContent=str;
   const pi=curPhaseIdx();
-  $('dash-timeline').innerHTML=PHASES.map((p,i)=>{
+  $('dash-tl').innerHTML=PHASES.map((p,i)=>{
     const d=i<pi,a=i===pi;
     const s=new Date(p.start),e=new Date(p.end);
     const pct=d?100:a?Math.min(100,Math.round((TODAY-s)/(e-s)*100)):0;
@@ -1403,11 +1401,6 @@ function drawWaterChart(){
 // ══════════════════════════════
 //  WORKOUT / MATCH
 // ══════════════════════════════
-
-
-
-
-
 
 function trainDateShift(d){
   if(d===0){trainViewDate=TDS;}
@@ -1681,7 +1674,7 @@ function renderFood(){
     {label:'タンパク質',val:totP+'g',sub:'目標: 90〜110g',color:'kpi-green'},
     {label:'炭水化物',val:totC+'g',sub:'目標: 200〜250g',color:'kpi-amber'},
     {label:'脂質',val:totF+'g',sub:'目標: 50〜70g',color:'kpi-blue'},
-  ].map(k=>`<div class="kpi-card ${k.color}"><div class="kpi-label">${k.label}</div><div class="kpi-value" style="font-size:22px">${k.val}</div><div class="kpi-sub">${k.sub}</div></div>`).join('');
+  ].map(k=>`<div class="kpi k-${k.color.replace('kpi-','')}"><div class="kpi-label">${k.label}</div><div class="kpi-value" style="font-size:22px">${k.val}</div><div class="kpi-sub">${k.sub}</div></div>`).join('');
 
   // Meal cards
   $('food-meal-cards').innerHTML=MEAL_TYPES.map(meal=>{
@@ -1759,7 +1752,7 @@ function openFoodLog(defaultMeal){
 
 function selectMealType(m){
   window._foodMeal=m;
-  document.querySelectorAll('#meal-type-btns .toggle-btn').forEach(b=>{b.classList.toggle('on',b.textContent.includes(m));});
+  document.querySelectorAll('#meal-type-btns .tgl').forEach(b=>{b.classList.toggle('on',b.textContent.includes(m));});
 }
 function selectPreset(i){
   const p=FOOD_PRESETS[i];
@@ -1821,12 +1814,6 @@ function drawFoodWeekChart(){
     if(v>0){ctx.fillStyle='var(--ink)';ctx.fillText(v,x+bw/2+2,H-19-h);}
   });
   ctx.textAlign='left';
-}
-
-const FOOD_ITEMS=['朝食にタンパク質を食べた','昼食のコンビニルールを守った','夕食を自炊した','白米を8割に抑えた','夜21時以降に食べなかった','甘い飲み物を飲まなかった','ラーメン・丼もの週1ルール内','水を1.5L以上飲んだ'];
-function renderFoodChecks(){
-  
-  $('food-daily').innerHTML=FOOD_ITEMS.map((item,i)=>{const k='food_'+i+'_'+TDS;const done=S.foodChecks[k];return`<div class="cl-item ${done?'done':''}" onclick="S.foodChecks['${k}']=!S.foodChecks['${k}'];save();this.classList.toggle('done')"><input type="checkbox" ${done?'checked':''}><span style="font-size:12px;margin-left:6px">${item}</span></div>`;}).join('');
 }
 
 // ══════════════════════════════
@@ -2127,7 +2114,7 @@ function renderChecklist(){
   $('checklist-area').innerHTML=CL_DATA.map(phase=>{
     const done=phase.items.filter(i=>S.checks[i.id]).length;td+=done;
     const pct=Math.round(done/phase.items.length*100);
-    return`<div class="cl-phase"><div class="cl-phase-header"><span class="tag" style="background:${phase.color}18;color:${phase.color}">${phase.phase}</span><div class="cl-phase-name">${phase.name}</div><span style="font-size:11px;font-weight:700;color:var(--ink3);margin-left:auto">${done}/${phase.items.length} (${pct}%)</span><span style="font-size:11px;color:var(--ink3);margin-left:8px">${phase.date}</span></div><div style="height:4px;background:var(--bg3);border-radius:2px;margin-bottom:10px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${phase.color};border-radius:2px;transition:width .5s"></div></div><div class="cl-items">${phase.items.map(item=>`<div class="cl-item ${S.checks[item.id]?'done':''}" onclick="toggleCheck('${item.id}',this)"><input type="checkbox" ${S.checks[item.id]?'checked':''}><div style="margin-left:6px"><span class="tag tag-gray" style="margin-bottom:2px">${item.tag}</span><div class="cl-text" style="margin-top:2px">${item.text}</div></div></div>`).join('')}</div></div>`;
+    return`<div class="cl-phase"><div class="cl-phase-hd"><span class="tag" style="background:${phase.color}18;color:${phase.color}">${phase.phase}</span><div class="cl-phase-name">${phase.name}</div><span style="font-size:11px;font-weight:700;color:var(--ink3);margin-left:auto">${done}/${phase.items.length} (${pct}%)</span><span style="font-size:11px;color:var(--ink3);margin-left:8px">${phase.date}</span></div><div style="height:4px;background:var(--bg3);border-radius:2px;margin-bottom:10px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${phase.color};border-radius:2px;transition:width .5s"></div></div><div class="cl-grid">${phase.items.map(item=>`<div class="cl-item ${S.checks[item.id]?'done':''}" onclick="toggleCheck('${item.id}',this)"><input type="checkbox" ${S.checks[item.id]?'checked':''}><div style="margin-left:6px"><span class="tag tag-gray" style="margin-bottom:2px">${item.tag}</span><div class="cl-text" style="margin-top:2px">${item.text}</div></div></div>`).join('')}</div></div>`;
   }).join('');
   $('cl-done').textContent=td;
 }
@@ -2177,14 +2164,14 @@ function drawMotiveChart(){
 const DEF_TACTICS=['サービス後の展開パターン','相手が疲れた時の攻め方','守りから攻めへ転じるパターン','ネット前で優位を作る方法'];
 function renderTactics(){
   while(S.tactics.length<4)S.tactics.push({text:''});
-  $('tactics-grid').innerHTML=S.tactics.map((t,i)=>`<div class="tactics-item"><div class="tactics-num">0${i+1}</div><div style="font-weight:700;font-size:13px;margin-bottom:5px">${DEF_TACTICS[i]||'戦術'+(i+1)}</div><textarea style="width:100%;min-height:72px;background:transparent;border:1px solid var(--border);padding:7px;font-size:12px;resize:vertical;line-height:1.6;border-radius:3px" placeholder="ここに書く..." oninput="S.tactics[${i}].text=this.value;save()">${t.text}</textarea></div>`).join('');
+  $('tactics-grid').innerHTML=S.tactics.map((t,i)=>`<div class="tactic-card"><div class="tactic-num">0${i+1}</div><div style="font-weight:700;font-size:13px;margin-bottom:5px">${DEF_TACTICS[i]||'戦術'+(i+1)}</div><textarea style="width:100%;min-height:72px;background:transparent;border:1px solid var(--border);padding:7px;font-size:12px;resize:vertical;line-height:1.6;border-radius:3px" placeholder="ここに書く..." oninput="S.tactics[${i}].text=this.value;save()">${t.text}</textarea></div>`).join('');
   $('weakness-list').innerHTML=S.weaknesses.map((w,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bg2)"><span class="tag tag-red">課題</span><input type="text" value="${w}" style="flex:1;background:transparent;border:none;font-size:12px;padding:0;outline:none" oninput="S.weaknesses[${i}]=this.value;save()"><button class="btn btn-danger btn-sm" onclick="S.weaknesses.splice(${i},1);save();renderTactics()">削除</button></div>`).join('');
   $('opponent-list').innerHTML=S.opponents.map((op,i)=>`<div style="background:var(--bg);border:1px solid var(--border);padding:11px;margin-bottom:7px;border-radius:3px"><div style="display:flex;gap:8px;margin-bottom:5px"><input type="text" value="${op.name}" placeholder="相手名" style="font-weight:700;flex:1" oninput="S.opponents[${i}].name=this.value;save()"><button class="btn btn-danger btn-sm" onclick="S.opponents.splice(${i},1);save();renderTactics()">削除</button></div><textarea style="width:100%;min-height:48px;border:1px solid var(--border);background:white;padding:7px;font-size:12px;resize:none;border-radius:3px" placeholder="特徴・対策..." oninput="S.opponents[${i}].note=this.value;save()">${op.note||''}</textarea></div>`).join('');
 }
 function addWeakness(){S.weaknesses.push('新しい課題');save();renderTactics();}
 function addOpponent(){S.opponents.push({name:'',note:''});save();renderTactics();}
 function renderMemos(){
-  $('memo-grid').innerHTML=S.memos.map((m,i)=>`<div class="memo-item"><div class="card-hd"><input class="memo-title-input" value="${m.title}" placeholder="タイトル" oninput="S.memos[${i}].title=this.value;save()"><button class="btn btn-danger btn-sm" onclick="S.memos.splice(${i},1);save();renderMemos()">削除</button></div><textarea style="width:100%;min-height:95px;background:transparent;border:none;color:var(--ink);padding:13px 15px;font-size:13px;resize:vertical;outline:none;line-height:1.7;font-family:'Noto Sans JP',sans-serif" placeholder="ここに書く..." oninput="S.memos[${i}].body=this.value;save()">${m.body}</textarea></div>`).join('')+`<div class="add-memo-btn" onclick="addMemo()">＋ メモを追加</div>`;
+  $('memo-grid').innerHTML=S.memos.map((m,i)=>`<div class="memo-item"><div class="card-hd"><input class="memo-title-input" value="${m.title}" placeholder="タイトル" oninput="S.memos[${i}].title=this.value;save()"><button class="btn btn-danger btn-sm" onclick="S.memos.splice(${i},1);save();renderMemos()">削除</button></div><textarea style="width:100%;min-height:95px;background:transparent;border:none;color:var(--ink);padding:13px 15px;font-size:13px;resize:vertical;outline:none;line-height:1.7;font-family:'Noto Sans JP',sans-serif" placeholder="ここに書く..." oninput="S.memos[${i}].body=this.value;save()">${m.body}</textarea></div>`).join('')+`<div class="add-area" onclick="addMemo()">＋ メモを追加</div>`;
 }
 function addMemo(){S.memos.push({id:'m'+Date.now(),title:'新しいメモ',body:''});save();renderMemos();}
 
@@ -2205,10 +2192,6 @@ renderMotive();renderTactics();renderMemos();
 
 // アプリ起動
 loadFromSupabase();
-
-
-
-
 
 
 </script>
