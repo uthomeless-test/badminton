@@ -428,7 +428,11 @@ textarea{resize:vertical;}
     <div class="sb-item" onclick="nav('tactics')"><span class="sb-icon">◇</span><span>戦術メモ</span></div>
     <div class="sb-item" onclick="nav('memo')"><span class="sb-icon">✎</span><span>フリーメモ</span></div>
   </nav>
-  <div class="sb-footer">v5.0 · Supabase<br><span id="save-status" style="color:var(--green);font-size:9px"></span></div>
+  <div class="sb-footer">
+    v5.0 · Supabase<br>
+    <span id="save-status" style="font-size:9px"></span><br>
+    <span onclick="nav('settings')" style="color:var(--blue);cursor:pointer;font-size:10px;text-decoration:underline">⚙ 同期設定・診断</span>
+  </div>
 </div>
 
 <!-- BOTTOM NAV -->
@@ -758,6 +762,48 @@ textarea{resize:vertical;}
   <div class="ca"><div class="g2" id="memo-grid"></div></div>
 </div>
 
+
+<!-- SETTINGS / DIAGNOSTICS -->
+<div id="panel-settings" class="panel">
+  <div class="ph"><div class="ph-left"><div class="ph-title">同期設定・診断</div><div class="ph-meta">Supabase接続の確認</div></div></div>
+  <div class="ca">
+    <div class="card mb16">
+      <div class="card-hd"><div class="card-title">接続ステータス</div></div>
+      <div style="padding:14px">
+        <div id="supa-status-display" style="font-size:14px;font-weight:700;margin-bottom:6px"></div>
+        <div id="supa-error-display" style="font-size:12px;color:var(--red);font-family:'JetBrains Mono',monospace;word-break:break-all"></div>
+      </div>
+    </div>
+    <div class="card mb16">
+      <div class="card-hd"><div class="card-title">接続テスト</div>
+        <button class="btn btn-primary btn-sm" onclick="testSupabase()">テスト実行</button>
+      </div>
+      <div style="padding:14px">
+        <div style="font-size:12px;color:var(--ink3);margin-bottom:10px">SupabaseへのSELECT（読み込み）とPATCH（書き込み）を実際に試します。</div>
+        <div id="supa-test-result"></div>
+      </div>
+    </div>
+    <div class="card mb16">
+      <div class="card-hd"><div class="card-title">テーブル作成SQL</div></div>
+      <div style="padding:14px">
+        <div style="font-size:12px;color:var(--ink3);margin-bottom:8px">404エラーが出る場合、Supabaseの SQL Editor で以下を実行してください：</div>
+        <pre style="background:var(--bg2);padding:12px;border-radius:3px;font-size:11px;font-family:'JetBrains Mono',monospace;overflow-x:auto;white-space:pre-wrap;line-height:1.6">create table if not exists tracker_data (
+  id text primary key default 'main',
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz default now()
+);
+insert into tracker_data (id, data)
+  values ('main', '{}'::jsonb)
+  on conflict (id) do nothing;
+alter table tracker_data disable row level security;</pre>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">現在のデータ量</div></div>
+      <div style="padding:14px" id="data-summary"></div>
+    </div>
+  </div>
+</div>
 </div><!-- /main -->
 </div><!-- /app -->
 
@@ -794,7 +840,11 @@ textarea{resize:vertical;}
 
 
 
+
+
 <script>
+
+
 
 
 
@@ -812,63 +862,152 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const SUPA_HEADERS = {
   'apikey': SUPA_KEY,
   'Authorization': 'Bearer ' + SUPA_KEY,
-  'Content-Type': 'application/json',
-  'Prefer': 'return=minimal'
+  'Content-Type': 'application/json'
 };
+const ROW_ID = 'main';
 
 // ══════════════════════════════
 //  STATE
 // ══════════════════════════════
 let S = {};
 let _saveTimer = null;
+let _online = false;          // Supabase接続が生きているか
+let _lastError = '';          // 直近のエラー内容
 
-// Supabaseから読み込み
+function setStatus(text, color){
+  const si = document.getElementById('save-status');
+  if(si){ si.textContent = text; si.style.color = color || 'var(--green)'; }
+}
+
+// ── 読み込み ──
 async function loadFromSupabase() {
   try {
-    const res = await fetch(SUPA_URL + '/rest/v1/tracker_data?id=eq.main&select=data', {
+    const res = await fetch(SUPA_URL + '/rest/v1/tracker_data?id=eq.' + ROW_ID + '&select=data', {
       headers: SUPA_HEADERS
     });
+    if (!res.ok) {
+      // HTTPエラー（テーブルなし/権限なし等）。本文も取得して原因を記録
+      const body = await res.text();
+      throw new Error('GET ' + res.status + ': ' + body.slice(0,200));
+    }
     const rows = await res.json();
-    if (rows && rows.length > 0 && rows[0].data) {
-      S = rows[0].data;
+    if (rows && rows.length > 0) {
+      S = rows[0].data || {};
+      _online = true;
     } else {
+      // レコードが無い → 新規作成
       S = {};
-      // レコードがなければ作成
-      await fetch(SUPA_URL + '/rest/v1/tracker_data', {
+      const ins = await fetch(SUPA_URL + '/rest/v1/tracker_data', {
         method: 'POST',
         headers: { ...SUPA_HEADERS, 'Prefer': 'return=minimal' },
-        body: JSON.stringify({ id: 'main', data: {} })
+        body: JSON.stringify({ id: ROW_ID, data: {} })
       });
+      if (!ins.ok) {
+        const body = await ins.text();
+        throw new Error('INSERT ' + ins.status + ': ' + body.slice(0,200));
+      }
+      _online = true;
     }
+    // ローカルにバックアップ
+    try { localStorage.setItem('bmt_v4', JSON.stringify(S)); } catch {}
   } catch(e) {
-    console.warn('Supabase load failed, using localStorage fallback:', e);
+    _online = false;
+    _lastError = String(e.message || e);
+    console.error('[Supabase] 読み込み失敗:', _lastError);
+    // フォールバック: localStorage
     try { S = JSON.parse(localStorage.getItem('bmt_v4')) || {}; } catch { S = {}; }
   }
   initDefaults();
   initApp();
+  // 接続状態を表示
+  if (_online) setStatus('✓ Supabase接続中', 'var(--green)');
+  else setStatus('⚠ オフライン(ローカル保存)', 'var(--red)');
 }
 
-// Supabaseへ保存（デバウンス: 1秒後にまとめて送信）
+// ── 保存（デバウンス1秒） ──
 function save() {
-  // localStorageにも同時保存（オフライン対策）
+  // 即座にローカル保存（消失防止）
   try { localStorage.setItem('bmt_v4', JSON.stringify(S)); } catch {}
   clearTimeout(_saveTimer);
-  _saveTimer = setTimeout(async () => {
-    try {
-      const si=document.getElementById('save-status');
-      if(si)si.textContent='保存中...';
-      await fetch(SUPA_URL + '/rest/v1/tracker_data?id=eq.main', {
-        method: 'PATCH',
-        headers: SUPA_HEADERS,
-        body: JSON.stringify({ data: S, updated_at: new Date().toISOString() })
-      });
-      if(si)setTimeout(()=>{si.textContent='✓ 保存済み';setTimeout(()=>{si.textContent='';},2000);},0);
-    } catch(e) {
-      console.warn('Supabase save failed:', e);
-      const si2=document.getElementById('save-status');
-      if(si2)si2.textContent='⚠ 保存失敗';
+  _saveTimer = setTimeout(pushToSupabase, 1000);
+}
+
+async function pushToSupabase() {
+  setStatus('保存中...', 'var(--amber)');
+  try {
+    const res = await fetch(SUPA_URL + '/rest/v1/tracker_data?id=eq.' + ROW_ID, {
+      method: 'PATCH',
+      headers: { ...SUPA_HEADERS, 'Prefer': 'return=representation' },
+      body: JSON.stringify({ data: S, updated_at: new Date().toISOString() })
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error('PATCH ' + res.status + ': ' + body.slice(0,200));
     }
-  }, 1000);
+    const updated = await res.json();
+    if (!updated || updated.length === 0) {
+      // PATCHが0行更新 = レコードが存在しない → 作成を試みる
+      const ins = await fetch(SUPA_URL + '/rest/v1/tracker_data', {
+        method: 'POST',
+        headers: { ...SUPA_HEADERS, 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ id: ROW_ID, data: S })
+      });
+      if (!ins.ok) {
+        const body = await ins.text();
+        throw new Error('INSERT ' + ins.status + ': ' + body.slice(0,200));
+      }
+    }
+    _online = true;
+    _lastError = '';
+    setStatus('✓ 保存済み', 'var(--green)');
+    setTimeout(()=>{ if(_online) setStatus('✓ Supabase接続中','var(--green)'); }, 2000);
+  } catch(e) {
+    _online = false;
+    _lastError = String(e.message || e);
+    console.error('[Supabase] 保存失敗:', _lastError);
+    setStatus('⚠ 保存失敗(詳細はi)', 'var(--red)');
+  }
+}
+
+// ── 手動接続テスト（設定画面から呼ぶ） ──
+async function testSupabase() {
+  const out = document.getElementById('supa-test-result');
+  if(out) out.innerHTML = '<div style="color:var(--ink3)">テスト中...</div>';
+  const log = [];
+  // 1. SELECT
+  try {
+    const r = await fetch(SUPA_URL + '/rest/v1/tracker_data?id=eq.' + ROW_ID + '&select=data', {headers: SUPA_HEADERS});
+    log.push(['SELECT', r.status, r.ok ? 'OK' : (await r.text()).slice(0,150)]);
+  } catch(e){ log.push(['SELECT','ERR',String(e.message||e)]); }
+  // 2. PATCH（テスト書き込み）
+  try {
+    const r = await fetch(SUPA_URL + '/rest/v1/tracker_data?id=eq.' + ROW_ID, {
+      method:'PATCH',
+      headers:{...SUPA_HEADERS,'Prefer':'return=representation'},
+      body: JSON.stringify({data: {...S, _test_ts: Date.now()}, updated_at: new Date().toISOString()})
+    });
+    const txt = r.ok ? (await r.json()) : (await r.text()).slice(0,150);
+    log.push(['PATCH', r.status, r.ok ? ('OK ('+(Array.isArray(txt)?txt.length:0)+'行更新)') : txt]);
+  } catch(e){ log.push(['PATCH','ERR',String(e.message||e)]); }
+
+  if(out){
+    out.innerHTML = log.map(([op,st,msg])=>
+      `<div style="padding:6px 0;border-bottom:1px solid var(--bg2);font-size:12px">
+        <strong style="font-family:'JetBrains Mono',monospace">${op}</strong>
+        <span style="color:${String(st)==='200'||String(st)==='201'||String(st)==='204'?'var(--green)':'var(--red)'};font-weight:700;margin:0 8px">${st}</span>
+        <span style="color:var(--ink3)">${msg}</span>
+      </div>`
+    ).join('') + `<div style="margin-top:10px;font-size:11px;color:var(--ink3)">
+      200/201/204 = 成功。401/403 = キーまたはRLS設定の問題。404 = テーブル未作成。
+    </div>`;
+  }
+}
+
+function showDiagnostics(){
+  const msg = _online
+    ? 'Supabaseに正常接続しています。'
+    : 'Supabaseに接続できていません。\n\n直近のエラー:\n' + (_lastError || '不明');
+  alert(msg);
 }
 
 function initDefaults() {
@@ -922,7 +1061,7 @@ function closeSidebar(){$('sidebar').classList.remove('open');$('sb-overlay').cl
 // ══════════════════════════════
 //  NAV
 // ══════════════════════════════
-const NAVMAP={dashboard:0,calendar:1,weight:3,sleep:4,water:5,food:6,motive:7,training:8,footwork:9,checklist:10,review:11,tactics:12,memo:13,day:-1};
+const NAVMAP={dashboard:0,calendar:1,weight:3,sleep:4,water:5,food:6,motive:7,training:8,footwork:9,checklist:10,review:11,tactics:12,memo:13,day:-1,settings:-1};
 const BN_IDS=['dashboard','calendar','day','training','checklist'];
 function nav(id){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
@@ -933,7 +1072,7 @@ function nav(id){
   const bni=BN_IDS.indexOf(id);if(bni>=0)document.querySelectorAll('.bn-item')[bni].classList.add('active');
   safeText('mob-title', PAGE_TITLES[id]||id);
   closeSidebar();
-  const fn={dashboard:renderDashboard,calendar:renderCalendar,weight:renderWeight,sleep:renderSleep,water:renderWater,food:renderFood,motive:renderMotive,training:()=>renderTraining('june'),footwork:renderFootwork,checklist:renderChecklist,review:renderReview,tactics:renderTactics,memo:renderMemos};
+  const fn={dashboard:renderDashboard,calendar:renderCalendar,weight:renderWeight,sleep:renderSleep,water:renderWater,food:renderFood,motive:renderMotive,training:()=>renderTraining('june'),footwork:renderFootwork,checklist:renderChecklist,review:renderReview,tactics:renderTactics,memo:renderMemos,settings:renderSettings};
   if(fn[id])fn[id]();
 }
 
@@ -2305,6 +2444,33 @@ function addOpponent(){S.opponents.push({name:'',note:''});save();renderTactics(
 function renderMemos(){
   $('memo-grid').innerHTML=S.memos.map((m,i)=>`<div class="memo-item"><div class="card-hd"><input class="memo-title-input" value="${m.title}" placeholder="タイトル" oninput="S.memos[${i}].title=this.value;save()"><button class="btn btn-danger btn-sm" onclick="S.memos.splice(${i},1);save();renderMemos()">削除</button></div><textarea style="width:100%;min-height:95px;background:transparent;border:none;color:var(--ink);padding:13px 15px;font-size:13px;resize:vertical;outline:none;line-height:1.7;font-family:'Noto Sans JP',sans-serif" placeholder="ここに書く..." oninput="S.memos[${i}].body=this.value;save()">${m.body}</textarea></div>`).join('')+`<div class="add-area" onclick="addMemo()">＋ メモを追加</div>`;
 }
+
+function renderSettings(){
+  const sd = document.getElementById('supa-status-display');
+  const ed = document.getElementById('supa-error-display');
+  if(sd) sd.innerHTML = _online
+    ? '<span style="color:var(--green)">✓ Supabaseに接続中</span>'
+    : '<span style="color:var(--red)">⚠ 接続できていません（ローカル保存のみ）</span>';
+  if(ed) ed.textContent = _lastError ? ('直近エラー: ' + _lastError) : '';
+  // データ量
+  const ds = document.getElementById('data-summary');
+  if(ds){
+    const counts = [
+      ['体重記録', (S.wLog||[]).length],
+      ['練習ログ', Object.values(S.trainLogs||{}).reduce((a,v)=>a+v.length,0)],
+      ['食事ログ', Object.values(S.foodLogs||{}).reduce((a,v)=>a+v.length,0)],
+      ['睡眠ログ', (S.sleepLog||[]).length],
+      ['カレンダー記録', Object.keys(S.calDays||{}).length],
+      ['モチベlog', (S.motiveLog||[]).length],
+      ['メモ', (S.memos||[]).length],
+    ];
+    const bytes = JSON.stringify(S).length;
+    ds.innerHTML = counts.map(([k,v])=>
+      `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bg2);font-size:12px"><span style="color:var(--ink3)">${k}</span><span style="font-weight:700">${v}件</span></div>`
+    ).join('') + `<div style="margin-top:8px;font-size:11px;color:var(--ink3)">合計データサイズ: ${(bytes/1024).toFixed(1)} KB</div>`;
+  }
+}
+
 function addMemo(){S.memos.push({id:'m'+Date.now(),title:'新しいメモ',body:''});save();renderMemos();}
 
 // ══════════════════════════════
@@ -2320,10 +2486,14 @@ renderDashboard();renderWeight();renderSleep();renderWater();
 renderTraining();renderFootwork();
 renderFood();renderCalendar();renderChecklist();renderReview();
 renderMotive();renderTactics();renderMemos();
+  // 初回ロード時、オンラインなら現在のSへ一度同期（レコード作成保証）
+  if(_online){ pushToSupabase(); }
 }
 
 // アプリ起動
 loadFromSupabase();
+
+
 
 
 
